@@ -1,0 +1,6 @@
+{
+  "name": "AI Interview Prep Suite",
+  "description": "Complete interview preparation workspace featuring an AI Resume Builder, ATS Resume Checker, Role-Specific Interview Q&A, Structured Study Concepts, and Timed Mock Interviews.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
