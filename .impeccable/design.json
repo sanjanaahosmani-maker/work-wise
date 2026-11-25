@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T22:40:00+05:30",
+  "title": "Design System: IntervYou",
+  "extensions": {
+    "colorMeta": {
+      "midnight-teal-rail": {
+        "role": "neutral",
+        "displayName": "Midnight Teal Rail",
+        "canonical": "#0b192c",
+        "tonalRamp": ["#060d18", "#0b192c", "#132642", "#1d375b", "#2d4e7a", "#52739e", "#8aa5c4", "#dce6f2"]
+      },
+      "precision-teal": {
+        "role": "primary",
+        "displayName": "Precision Teal",
+        "canonical": "#0d9488",
+        "tonalRamp": ["#042f2e", "#0f766e", "#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4", "#f0fdfa"]
+      },
+      "warm-amber-signal": {
+        "role": "secondary",
+        "displayName": "Warm Amber Signal",
+        "canonical": "#d97706",
+        "tonalRamp": ["#451a03", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fffbeb"]
+      },
+      "alabaster-ground": {
+        "role": "neutral",
+        "displayName": "Alabaster Ground",
+        "canonical": "#f5f7f8",
+        "tonalRamp": ["#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f5f7f8"]
+      },
+      "obsidian-ground": {
+        "role": "neutral",
+        "displayName": "Obsidian Ground",
+        "canonical": "#09111b",
+        "tonalRamp": ["#050a10", "#09111b", "#101b29", "#162335", "#1e2d40", "#2b3f57", "#64748b", "#dbe4ef"]
+      },
+      "hairline-border": {
+        "role": "neutral",
+        "displayName": "Hairline Border",
+        "canonical": "#e2e8f0",
+        "tonalRamp": ["#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f8fafc"]
+      },
+      "emerald-success": {
+        "role": "neutral",
+        "displayName": "Emerald Success",
+        "canonical": "#059669",
+        "tonalRamp": ["#022c22", "#065f46", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0", "#ecfdf5"]
+      },
+      "rose-critical": {
+        "role": "neutral",
+        "displayName": "Rose Critical",
+        "canonical": "#e11d48",
+        "tonalRamp": ["#4c0519", "#9f1239", "#e11d48", "#f43f5e", "#fb7185", "#fda4af", "#fecdd3", "#fff1f2"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines, split-screen thesis, and ATS hero score readouts." },
+      "headline": { "displayName": "Headline", "purpose": "Workspace module titles and authentication headers." },
+      "title": { "displayName": "Title", "purpose": "Card headers, modal titles, and active exam prompts." },
+      "body": { "displayName": "Body", "purpose": "Primary UI copy, form inputs, and coaching feedback." },
+      "label": { "displayName": "Label", "purpose": "Tabular metrics, counters, form labels, and metadata captions." }
+    },
+    "shadows": [
+      {
+        "name": "card-resting",
+        "value": "0 1px 2px rgba(11, 25, 44, 0.04), 0 4px 12px -4px rgba(11, 25, 44, 0.04)",
+        "purpose": "Resting elevation for workspace panels (.card-elevated)."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 4px 10px -2px rgba(11, 25, 44, 0.06), 0 14px 28px -8px rgba(13, 148, 136, 0.12)",
+        "purpose": "Hover elevation for interactive module and progress cards (.card-interactive:hover)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Card hover lifts, button micro-feedback, modal entrances, and progress bar fills."
+      },
+      {
+        "name": "nav-spring",
+        "value": "spring(stiffness: 420, damping: 32)",
+        "purpose": "Active route indicator and segmented tab pills via Motion layoutId."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button in Precision Teal with tactile hover, active press, and focus-visible states.",
+      "html": "<button class=\"ds-btn-primary\">Analyze Resume</button>",
+      "css": ".ds-btn-primary { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; background: #0d9488; color: #ffffff; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 14px; line-height: 1.4; cursor: pointer; transition: background-color 150ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: #0f766e; } .ds-btn-primary:active { transform: scale(0.985); } .ds-btn-primary:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hairline-outlined secondary control for sample loading, exports, and supporting actions.",
+      "html": "<button class=\"ds-btn-secondary\">Load Sample Profile</button>",
+      "css": ".ds-btn-secondary { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; background: #ffffff; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; font-weight: 500; font-size: 12px; line-height: 1.33; cursor: pointer; transition: background-color 150ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-secondary:hover { background: #f8fafc; } .ds-btn-secondary:active { transform: scale(0.985); } .ds-btn-secondary:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }"
+    },
+    {
+      "name": "Interactive Module Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Elevated porcelain module card that lifts -2px with teal-tinted shadow and border highlight on hover.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Resume Builder</h3><p class=\"ds-card-body\">Draft from scratch, import any resume file, or pull LinkedIn details into an ATS resume.</p></div>",
+      "css": ".ds-card { background: #ffffff; color: #0b192c; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(11, 25, 44, 0.04), 0 4px 12px -4px rgba(11, 25, 44, 0.04); cursor: pointer; transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease, box-shadow 200ms ease; } .ds-card:hover { transform: translateY(-2px); border-color: #5eead4; box-shadow: 0 4px 10px -2px rgba(11, 25, 44, 0.06), 0 14px 28px -8px rgba(13, 148, 136, 0.12); } .ds-card-title { font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px 0; color: #0b192c; } .ds-card-body { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.6; margin: 0; color: #475569; }"
+    },
+    {
+      "name": "Metric Readout Card",
+      "kind": "card",
+      "description": "4-column preparation metric tile combining Manrope caption and JetBrains Mono tabular-nums readout.",
+      "html": "<div class=\"ds-metric-card\"><p class=\"ds-metric-label\">Latest ATS Score</p><p class=\"ds-metric-value\">88/100</p><p class=\"ds-metric-caption\">3 checks completed</p></div>",
+      "css": ".ds-metric-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(11, 25, 44, 0.04), 0 4px 12px -4px rgba(11, 25, 44, 0.04); transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease, box-shadow 200ms ease; } .ds-metric-card:hover { transform: translateY(-2px); border-color: #5eead4; box-shadow: 0 4px 10px -2px rgba(11, 25, 44, 0.06), 0 14px 28px -8px rgba(13, 148, 136, 0.12); } .ds-metric-label { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; color: #64748b; margin: 0; } .ds-metric-value { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; font-variant-numeric: tabular-nums; font-size: 24px; font-weight: 700; color: #0f766e; margin: 8px 0 0 0; } .ds-metric-caption { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; font-size: 12px; color: #64748b; margin: 4px 0 0 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Standard form input with 1px slate border, subtle corner radius, and Precision Teal focus ring.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\" />",
+      "css": ".ds-input { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; background: #ffffff; color: #0b192c; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 100%; caret-color: #0d9488; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-input::placeholder { color: #94a3b8; } .ds-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }"
+    },
+    {
+      "name": "Segmented Tab Switcher",
+      "kind": "chip",
+      "description": "Muted pill track holding two or more mode toggles with an elevated porcelain active tab.",
+      "html": "<div class=\"ds-tablist\" role=\"tablist\"><button class=\"ds-tab ds-tab-active\" role=\"tab\" aria-selected=\"true\">Log In</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Create Profile</button></div>",
+      "css": ".ds-tablist { display: inline-grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; } .ds-tab { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #475569; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; } .ds-tab:hover { color: #0b192c; } .ds-tab-active { background: #ffffff; color: #0b192c; border-color: rgba(226, 232, 240, 0.8); box-shadow: 0 1px 2px rgba(11, 25, 44, 0.05); } .ds-tab:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }"
+    },
+    {
+      "name": "Rail Navigation Item",
+      "kind": "nav",
+      "description": "Active navigation item anchored inside the persistent Midnight Teal command rail.",
+      "html": "<div class=\"ds-rail-bg\"><button class=\"ds-nav-item\"><span class=\"ds-nav-left\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/></svg><span>Overview</span></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></button></div>",
+      "css": ".ds-rail-bg { background: #0b192c; padding: 12px; border-radius: 12px; } .ds-nav-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(13, 148, 136, 0.2); color: #ffffff; border: 1px solid rgba(20, 184, 166, 0.4); border-radius: 12px; padding: 10px 12px; font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease; } .ds-nav-item:hover { background: rgba(13, 148, 136, 0.3); } .ds-nav-left { display: inline-flex; align-items: center; gap: 12px; } .ds-nav-item svg { color: #5eead4; flex-shrink: 0; } .ds-nav-item:focus-visible { outline: 2px solid #2dd4bf; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Technical Monograph Desk",
+    "overview": "IntervYou organizes end-to-end interview preparation as a calm, authoritative studio desk. A persistent deep midnight-teal navigation rail anchors crisp alabaster and porcelain working surfaces, keeping dense workflows—resume building and AI correction, ATS auditing, exam-mode Q&A, study guides, mock interviews, and job-listing verification—legible without visual noise.\n\nInteractions feel tactile and responsive rather than theatrical: segmented tab pills and navigation active states glide with spring damping, interactive module and metric cards lift slightly on hover, and exam transitions slide cleanly between questions. Both Light and Dark themes preserve strict contrast and clear state semantics (note that built Dark mode lands slightly deeper at #09111b / #101b29 than the initial #0A111A / #111C2B direction-brief draft).",
+    "keyCharacteristics": [
+      "Committed midnight-teal command rail paired with high-contrast alabaster or obsidian-teal work canvases.",
+      "Editorial display voice (Bricolage Grotesque) matched with crisp Manrope UI text and JetBrains Mono tabular figures.",
+      "Spring-damped active indicators (layoutId) and subtle hover-lift elevation on interactive cards.",
+      "Zero purple/indigo AI clichés, zero decorative kickers above page headings, and restrained amber/emerald/rose state accents."
+    ],
+    "rules": [
+      {
+        "name": "The Committed Rail Rule",
+        "body": "The left navigation rail stays deep midnight-teal (#0b192c) across both Light and Dark themes so spatial orientation never flickers when toggling themes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Restrained Signal Rule",
+        "body": "Precision teal owns primary actions; amber, emerald, and rose appear strictly for semantic metrics, mastery states, cautions, and validation errors.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Metric Rule",
+        "body": "Every numerical score, question counter, timer, and summary metric pairs JetBrains Mono with tabular-nums so numbers align cleanly without horizontal jitter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hover-Earned Lift Rule",
+        "body": "Cards rest gently on hairline borders with low-opacity ambient depth; directional -2px lift and teal-tinted shadow appear only on interactive cards during hover.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use tabular-nums with JetBrains Mono for all ATS scores, question counts, timers, and session progress metrics.",
+      "Do pair interactive hover states with clear border/shadow transitions and accessible :focus-visible outlines.",
+      "Do support both Light and Dark theme tokens consistently across every form, modal, and chart."
+    ],
+    "donts": [
+      "Don't introduce purple/indigo gradient accents or eyebrow kickers above page <h1> headings.",
+      "Don't place one-sided vertical accent bars on rounded containers.",
+      "Don't hide core exam, resume, or ATS workflow steps behind modals when inline progression fits."
+    ]
+  }
+}

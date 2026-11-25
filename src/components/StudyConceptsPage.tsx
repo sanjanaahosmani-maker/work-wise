@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { BookOpen, CheckCircle2, Circle, ExternalLink, Loader2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AVAILABLE_ROLES, CURATED_STUDY_PATHS } from '../data/catalog';
 import { apiRequest } from '../lib/api';
 import type {
@@ -166,12 +167,12 @@ export function StudyConceptsPage({
       <form
         onSubmit={handleGeneratePath}
         noValidate
-        className="bg-white border border-slate-200 rounded-xl p-5"
+        className="bg-white border border-slate-200 rounded-xl p-5 card-elevated"
       >
         {error && (
           <div
             role="alert"
-            className="mb-4 px-3.5 py-2.5 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg"
+            className="mb-4 px-3.5 py-2.5 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg"
           >
             {error}
           </div>
@@ -189,7 +190,7 @@ export function StudyConceptsPage({
                 setRole(e.target.value);
                 handleLoadCurated(e.target.value);
               }}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
             >
               {AVAILABLE_ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -207,7 +208,7 @@ export function StudyConceptsPage({
               id="study-level"
               value={level}
               onChange={(e) => setLevel(e.target.value as StudyLevel)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
             >
               {LEVELS.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -221,7 +222,7 @@ export function StudyConceptsPage({
             <button
               type="submit"
               disabled={loadingPath}
-              className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
+              className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
             >
               {loadingPath ? (
                 <>
@@ -241,24 +242,32 @@ export function StudyConceptsPage({
         <div
           role="tablist"
           aria-label="Filter study tiers"
-          className="inline-flex items-center gap-1 p-1 bg-slate-200/70 rounded-lg"
+          className="inline-flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-xl relative"
         >
-          {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((tier) => (
-            <button
-              key={tier}
-              type="button"
-              role="tab"
-              aria-selected={activeTierFilter === tier}
-              onClick={() => setActiveTierFilter(tier)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-colors whitespace-nowrap ${
-                activeTierFilter === tier
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {tier === 'all' ? 'All Levels' : tier}
-            </button>
-          ))}
+          {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((tier) => {
+            const active = activeTierFilter === tier;
+            return (
+              <button
+                key={tier}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTierFilter(tier)}
+                className={`relative z-10 px-3 py-1.5 text-xs font-semibold rounded-lg capitalize transition-colors whitespace-nowrap ${
+                  active ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="studyTierPill"
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs -z-10"
+                  />
+                )}
+                {tier === 'all' ? 'All Levels' : tier}
+              </button>
+            );
+          })}
         </div>
         <p className="text-xs text-slate-500">
           Click any concept card for an in-depth guide and practice problems.
@@ -287,14 +296,18 @@ export function StudyConceptsPage({
                   return (
                     <div
                       key={topic.topic}
-                      className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                      onClick={() => openTopicDeepDive(topic)}
+                      className="group cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between card-elevated card-interactive hover:border-teal-300"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <h3 className="text-base font-semibold text-slate-900">{topic.topic}</h3>
                           <button
                             type="button"
-                            onClick={() => onToggleTopicStudied(topicKey)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleTopicStudied(topicKey);
+                            }}
                             aria-label={
                               isStudied
                                 ? `Mark ${topic.topic} as not studied`
@@ -303,7 +316,7 @@ export function StudyConceptsPage({
                             className={`inline-flex items-center gap-1 text-xs font-medium shrink-0 transition-colors ${
                               isStudied
                                 ? 'text-emerald-700'
-                                : 'text-slate-400 hover:text-slate-700'
+                                : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
                             {isStudied ? (
@@ -332,8 +345,11 @@ export function StudyConceptsPage({
                         </span>
                         <button
                           type="button"
-                          onClick={() => openTopicDeepDive(topic)}
-                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 whitespace-nowrap shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openTopicDeepDive(topic);
+                          }}
+                          className="text-xs font-semibold text-teal-700 hover:text-teal-600 whitespace-nowrap shrink-0"
                         >
                           Open Guide
                         </button>
@@ -360,155 +376,167 @@ export function StudyConceptsPage({
       </div>
 
       {/* Topic Detail Modal */}
-      {selectedTopic && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="topic-modal-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl max-h-[88vh] flex flex-col shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
-              <div>
-                <h2 id="topic-modal-title" className="text-base font-semibold text-slate-900">
-                  {selectedTopic.topic}
-                </h2>
-                <p className="text-xs text-slate-500">{role} Study Guide</p>
+      <AnimatePresence>
+        {selectedTopic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="topic-modal-title"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+                <div>
+                  <h2 id="topic-modal-title" className="text-base font-semibold text-slate-900">
+                    {selectedTopic.topic}
+                  </h2>
+                  <p className="text-xs text-slate-500">{role} Study Guide</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTopic(null)}
+                  aria-label="Close topic guide modal"
+                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTopic(null)}
-                aria-label="Close topic guide modal"
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
 
-            <div className="p-6 space-y-5 overflow-y-auto">
-              {qaQuestionContext && (
-                <div className="bg-indigo-50/70 border border-indigo-200 rounded-lg p-3.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 mb-1">
-                    From Interview Q&amp;A
+              <div className="p-6 space-y-5 overflow-y-auto">
+                {qaQuestionContext && (
+                  <div className="bg-teal-50/70 border border-teal-200 rounded-lg p-3.5">
+                    <p className="text-xs font-semibold text-teal-700 mb-1">
+                      From Interview Q&amp;A
+                    </p>
+                    <p className="text-xs font-medium text-slate-800">{qaQuestionContext}</p>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 mb-1">Overview</h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {topicDetails?.description ?? selectedTopic.description}
                   </p>
-                  <p className="text-xs font-medium text-slate-800">{qaQuestionContext}</p>
                 </div>
-              )}
 
-              <div>
-                <h3 className="text-xs font-semibold text-slate-500 mb-1">Overview</h3>
-                <p className="text-sm text-slate-700 leading-relaxed">
-                  {topicDetails?.description ?? selectedTopic.description}
-                </p>
-              </div>
-
-              {loadingDetails && (
-                <div className="flex items-center gap-2 py-4 text-sm text-slate-600">
-                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" aria-hidden="true" />
-                  Loading deep-dive concepts, example problems, and common pitfalls...
-                </div>
-              )}
-
-              {detailsError && (
-                <div className="px-3.5 py-2.5 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
-                  {detailsError} Showing core outline below.
-                </div>
-              )}
-
-              {topicDetails ? (
-                <>
-                  <div className="pt-3 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-slate-700 mb-2">Key Concepts</h3>
-                    <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
-                      {topicDetails.key_concepts.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
+                {loadingDetails && (
+                  <div className="flex items-center gap-2 py-4 text-sm text-slate-600">
+                    <Loader2 className="h-4 w-4 animate-spin text-teal-600" aria-hidden="true" />
+                    Loading deep-dive concepts, example problems, and common pitfalls...
                   </div>
+                )}
 
-                  <div className="pt-3 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-slate-700 mb-2">Example Problems</h3>
-                    <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
-                      {topicDetails.example_problems.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
+                {detailsError && (
+                  <div className="px-3.5 py-2.5 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+                    {detailsError} Showing core outline below.
                   </div>
+                )}
 
-                  <div className="pt-3 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-amber-700 mb-2">Common Mistakes</h3>
-                    <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
-                      {topicDetails.common_mistakes.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100">
-                    <h3 className="text-xs font-semibold text-slate-700 mb-2">
-                      Recommended Resources
-                    </h3>
-                    <ul className="space-y-2 text-sm">
-                      {topicDetails.resources.map((res, i) => (
-                        <li key={i} className="flex items-center justify-between gap-2">
-                          <a
-                            href={res.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium"
-                          >
-                            <span>{res.name}</span>
-                            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                          </a>
-                          <span className="text-xs text-slate-500 capitalize">{res.type}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              ) : (
-                !loadingDetails && (
-                  <div className="space-y-4 pt-3 border-t border-slate-100">
-                    <div>
-                      <h3 className="text-xs font-semibold text-slate-700 mb-2">Key Points</h3>
-                      <ul className="space-y-1 text-sm text-slate-700 list-disc pl-5">
-                        {selectedTopic.key_points.map((pt, i) => (
-                          <li key={i}>{pt}</li>
+                {topicDetails ? (
+                  <>
+                    <div className="pt-3 border-t border-slate-100">
+                      <h3 className="text-xs font-semibold text-slate-700 mb-2">Key Concepts</h3>
+                      <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
+                        {topicDetails.key_concepts.map((item, i) => (
+                          <li key={i}>{item}</li>
                         ))}
                       </ul>
                     </div>
-                    <div>
-                      <h3 className="text-xs font-semibold text-slate-700 mb-2">Resources</h3>
-                      <p className="text-sm text-slate-600">
-                        {selectedTopic.resources.join(' · ')}
-                      </p>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
 
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
-              <button
-                type="button"
-                onClick={() => onToggleTopicStudied(`${role}::${selectedTopic.topic}`)}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-              >
-                {studiedTopics.includes(`${role}::${selectedTopic.topic}`)
-                  ? 'Marked as Studied'
-                  : 'Mark Concept as Studied'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedTopic(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    <div className="pt-3 border-t border-slate-100">
+                      <h3 className="text-xs font-semibold text-slate-700 mb-2">Example Problems</h3>
+                      <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
+                        {topicDetails.example_problems.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100">
+                      <h3 className="text-xs font-semibold text-amber-700 mb-2">Common Mistakes</h3>
+                      <ul className="space-y-1.5 text-sm text-slate-700 list-disc pl-5">
+                        {topicDetails.common_mistakes.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100">
+                      <h3 className="text-xs font-semibold text-slate-700 mb-2">
+                        Recommended Resources
+                      </h3>
+                      <ul className="space-y-2 text-sm">
+                        {topicDetails.resources.map((res, i) => (
+                          <li key={i} className="flex items-center justify-between gap-2">
+                            <a
+                              href={res.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-teal-700 hover:text-teal-600 font-medium"
+                            >
+                              <span>{res.name}</span>
+                              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                            </a>
+                            <span className="text-xs text-slate-500 capitalize">{res.type}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  !loadingDetails && (
+                    <div className="space-y-4 pt-3 border-t border-slate-100">
+                      <div>
+                        <h3 className="text-xs font-semibold text-slate-700 mb-2">Key Points</h3>
+                        <ul className="space-y-1 text-sm text-slate-700 list-disc pl-5">
+                          {selectedTopic.key_points.map((pt, i) => (
+                            <li key={i}>{pt}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-semibold text-slate-700 mb-2">Resources</h3>
+                        <p className="text-sm text-slate-600">
+                          {selectedTopic.resources.join(' · ')}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onToggleTopicStudied(`${role}::${selectedTopic.topic}`)}
+                  className="text-xs font-semibold text-teal-700 hover:text-teal-600"
+                >
+                  {studiedTopics.includes(`${role}::${selectedTopic.topic}`)
+                    ? 'Marked as Studied'
+                    : 'Mark Concept as Studied'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTopic(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

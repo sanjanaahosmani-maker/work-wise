@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   Send,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AVAILABLE_ROLES, CURATED_QUESTIONS, EXPERIENCE_LEVELS } from '../data/catalog';
 import { apiRequest } from '../lib/api';
 import type {
@@ -273,7 +274,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
               id="qa-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
               required
             >
               <option value="">Select a role...</option>
@@ -293,7 +294,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
               id="qa-level"
               value={experienceLevel}
               onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
             >
               {EXPERIENCE_LEVELS.map((lvl) => (
                 <option key={lvl.value} value={lvl.value}>
@@ -313,7 +314,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               placeholder="e.g., Web Performance, Distributed Systems"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
             />
           </div>
 
@@ -329,7 +330,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
               value={countText}
               onChange={(e) => setCountText(e.target.value)}
               onBlur={() => setCountText(String(getValidCount()))}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-600"
             />
           </div>
 
@@ -337,7 +338,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors"
             >
               {loading ? (
                 <>
@@ -363,7 +364,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
           {currentQuestion ? (
             <>
               {/* Exam Progress Header */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 card-elevated">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-xs font-medium text-slate-500">{sourceLabel}</p>
@@ -379,9 +380,11 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                 </div>
 
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-indigo-600 transition-all duration-300"
-                    style={{ width: `${progressPercent}%` }}
+                  <motion.div
+                    initial={false}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full bg-[#0D9488]"
                   />
                 </div>
 
@@ -395,9 +398,9 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                         type="button"
                         onClick={() => handleGoToQuestion(idx)}
                         aria-label={`Go to question ${idx + 1}`}
-                        className={`h-7 min-w-7 px-2 text-xs font-mono font-medium rounded-md transition-colors ${
+                        className={`h-7 min-w-7 px-2 text-xs font-mono font-semibold rounded-md transition-colors ${
                           isCurrent
-                            ? 'bg-indigo-600 text-white'
+                            ? 'bg-teal-600 text-white shadow-xs'
                             : isAnswered
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -411,23 +414,28 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
               </div>
 
               {/* Active Exam Question Card */}
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentIndex}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden card-elevated"
+                >
                 <div className="p-6 space-y-5">
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium text-indigo-700 bg-indigo-50 rounded-md">
-                        Question {String(currentIndex + 1).padStart(2, '0')}
-                      </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <h2 className="text-lg font-semibold text-slate-900 leading-snug">
+                        {currentQuestion.question}
+                      </h2>
                       {currentFeedback && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 shrink-0 pt-0.5">
                           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                           Answered · {currentFeedback.score}/100
                         </span>
                       )}
                     </div>
-                    <h2 className="text-lg font-semibold text-slate-900 leading-snug">
-                      {currentQuestion.question}
-                    </h2>
                     {currentQuestion.key_points.length > 0 && (
                       <p className="text-xs text-slate-500">
                         Key focus: {currentQuestion.key_points.join(' · ')}
@@ -438,7 +446,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                   {examError && (
                     <div
                       role="alert"
-                      className="px-3.5 py-2.5 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg"
+                      className="px-3.5 py-2.5 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg"
                     >
                       {examError}
                     </div>
@@ -457,13 +465,17 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                       value={currentAnswer}
                       onChange={(e) => handleAnswerChange(e.target.value)}
                       placeholder="Write your answer in exam style—cover architecture, trade-offs, and concrete examples..."
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
 
                   {showIdeal && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
-                      <p className="text-xs font-semibold text-indigo-700">Ideal Answer</p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2"
+                    >
+                      <p className="text-xs font-semibold text-teal-700">Ideal Answer</p>
                       <p className="text-sm text-slate-700 leading-relaxed">
                         {currentQuestion.ideal_answer}
                       </p>
@@ -472,14 +484,18 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                           Evaluated on: {currentQuestion.evaluation_criteria.join(' · ')}
                         </p>
                       )}
-                    </div>
+                    </motion.div>
                   )}
 
                   {currentFeedback && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3"
+                    >
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold text-slate-700">Evaluation Feedback</p>
-                        <p className="text-lg font-bold font-mono tabular-nums text-indigo-700">
+                        <p className="text-lg font-bold font-mono tabular-nums text-teal-700">
                           {currentFeedback.score}/100
                         </p>
                       </div>
@@ -506,26 +522,30 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                       </div>
 
                       <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={handleKnowMore}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors whitespace-nowrap"
                         >
                           <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                           Know More
-                        </button>
+                        </motion.button>
                         {currentIndex < questions.length - 1 && (
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="button"
                             onClick={() => handleGoToQuestion(currentIndex + 1)}
                             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors whitespace-nowrap"
                           >
                             Next Question
                             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                          </button>
+                          </motion.button>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
@@ -558,7 +578,7 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                       type="button"
                       onClick={handleEvaluate}
                       disabled={evaluating}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
                     >
                       {evaluating ? (
                         <>
@@ -584,7 +604,8 @@ export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQa
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
+              </AnimatePresence>
             </>
           ) : (
             <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">

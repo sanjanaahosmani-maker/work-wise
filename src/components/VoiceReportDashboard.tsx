@@ -107,10 +107,10 @@ export function VoiceReportDashboard({
   return (
     <div className="space-y-6">
       {/* Header Summary Card */}
-      <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
+      <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <Mic className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
@@ -136,7 +136,7 @@ export function VoiceReportDashboard({
             <button
               type="button"
               onClick={onStartNewSession}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors whitespace-nowrap"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               New Voice Session
@@ -204,7 +204,7 @@ export function VoiceReportDashboard({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs">
           <div>
             <p className="text-slate-500">Overall Score</p>
-            <p className="mt-1 text-base font-bold font-mono tabular-nums text-indigo-700">
+            <p className="mt-1 text-base font-bold font-mono tabular-nums text-teal-700">
               {report.overallScore}/100
             </p>
           </div>
@@ -245,10 +245,10 @@ export function VoiceReportDashboard({
 
       {/* Progress Tracking Across Saved Sessions */}
       {chartData.length > 0 && (
-        <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+        <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+              <TrendingUp className="h-4 w-4 text-teal-600" aria-hidden="true" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
                   Progress Across Voice Sessions
@@ -260,11 +260,11 @@ export function VoiceReportDashboard({
             </div>
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-xs bg-indigo-600" aria-hidden="true" />
+                <span className="h-2.5 w-2.5 rounded-xs bg-teal-600" aria-hidden="true" />
                 Confidence
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-xs bg-sky-500" aria-hidden="true" />
+                <span className="h-2.5 w-2.5 rounded-xs bg-amber-600" aria-hidden="true" />
                 Communication
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -292,17 +292,19 @@ export function VoiceReportDashboard({
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#FFFFFF',
-                    borderColor: '#E2E8F0',
-                    borderRadius: '0.5rem',
+                    backgroundColor: '#0B192C',
+                    color: '#F8FAFC',
+                    borderColor: '#1E3A5F',
+                    borderRadius: '0.625rem',
                     fontSize: '12px',
+                    boxShadow: '0 8px 20px rgba(11, 25, 44, 0.25)',
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="confidence"
                   name="Confidence"
-                  stroke="#4F46E5"
+                  stroke="#0D9488"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                 />
@@ -310,7 +312,7 @@ export function VoiceReportDashboard({
                   type="monotone"
                   dataKey="communication"
                   name="Communication"
-                  stroke="#0EA5E9"
+                  stroke="#D97706"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                 />
@@ -330,7 +332,7 @@ export function VoiceReportDashboard({
 
       {/* Strengths, Weaknesses, Tips & Practice Plan */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+        <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4 text-emerald-600" aria-hidden="true" />
             <h3 className="text-base font-semibold text-slate-900">Strengths &amp; Gaps</h3>
@@ -353,9 +355,9 @@ export function VoiceReportDashboard({
           </div>
         </section>
 
-        <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+        <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+            <Lightbulb className="h-4 w-4 text-teal-600" aria-hidden="true" />
             <h3 className="text-base font-semibold text-slate-900">
               Actionable Tips &amp; Practice Plan
             </h3>
@@ -369,7 +371,7 @@ export function VoiceReportDashboard({
             </ul>
           </div>
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs font-semibold text-indigo-700 mb-1.5">
+            <p className="text-xs font-semibold text-teal-700 mb-1.5">
               Next Sessions Practice Plan
             </p>
             <ol className="space-y-1.5 text-sm text-slate-700 list-decimal pl-5">
@@ -382,9 +384,9 @@ export function VoiceReportDashboard({
       </div>
 
       {/* English Grammar Corrections & Better Phrasing */}
-      <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+      <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5">
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+          <FileText className="h-4 w-4 text-teal-600" aria-hidden="true" />
           <h3 className="text-base font-semibold text-slate-900">
             English Fluency, Grammar &amp; Phrasing Suggestions
           </h3>
@@ -407,7 +409,7 @@ export function VoiceReportDashboard({
             {report.englishKnowledge.betterPhrasings.map((item, idx) => (
               <div key={idx} className="border border-slate-200 rounded-lg p-3.5 text-xs space-y-1">
                 <p className="text-slate-500">Instead of: &ldquo;{item.original}&rdquo;</p>
-                <p className="font-medium text-indigo-700 flex items-start gap-1.5">
+                <p className="font-medium text-teal-700 flex items-start gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Try: &ldquo;{item.improved}&rdquo;</span>
                 </p>
@@ -418,7 +420,7 @@ export function VoiceReportDashboard({
       </section>
 
       {/* Question-by-Question Review */}
-      <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+      <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4">
         <h3 className="text-base font-semibold text-slate-900">Question-by-Question Feedback</h3>
         <div className="space-y-4">
           {report.questionFeedback.map((item, idx) => (
@@ -430,7 +432,7 @@ export function VoiceReportDashboard({
                   </span>
                   <h4 className="text-sm font-semibold text-slate-900 mt-0.5">{item.question}</h4>
                 </div>
-                <span className="font-mono tabular-nums text-sm font-bold text-indigo-700 shrink-0">
+                <span className="font-mono tabular-nums text-sm font-bold text-teal-700 shrink-0">
                   {item.score}/100
                 </span>
               </div>
@@ -440,8 +442,8 @@ export function VoiceReportDashboard({
                   <p className="font-semibold text-slate-700">Your Spoken Answer</p>
                   <p className="text-slate-600 leading-relaxed">{item.userAnswer}</p>
                 </div>
-                <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3.5 space-y-1">
-                  <p className="font-semibold text-indigo-800">Sample Better Answer</p>
+                <div className="bg-teal-50/50 border border-teal-100 rounded-lg p-3.5 space-y-1">
+                  <p className="font-semibold text-teal-700">Sample Better Answer</p>
                   <p className="text-slate-700 leading-relaxed">{item.sampleBetterAnswer}</p>
                 </div>
               </div>

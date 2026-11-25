@@ -27,7 +27,7 @@ export function FakeJobDetectionPage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 space-y-4"
+          className="lg:col-span-7 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4"
         >
           <div className="pb-3 border-b border-slate-200">
             <h2 className="text-base font-semibold text-slate-900">Job Posting Details</h2>
@@ -47,7 +47,7 @@ export function FakeJobDetectionPage() {
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="e.g., Remote Junior Software Engineer"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
 
@@ -61,7 +61,7 @@ export function FakeJobDetectionPage() {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="e.g., Northstar Systems"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
           </div>
@@ -77,7 +77,7 @@ export function FakeJobDetectionPage() {
                 value={sourceUrlOrEmail}
                 onChange={(e) => setSourceUrlOrEmail(e.target.value)}
                 placeholder="e.g., careers@company.com or https://..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
 
@@ -91,7 +91,7 @@ export function FakeJobDetectionPage() {
                 value={salaryRange}
                 onChange={(e) => setSalaryRange(e.target.value)}
                 placeholder="e.g., $95,000 - $120,000 / yr"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
           </div>
@@ -109,13 +109,13 @@ export function FakeJobDetectionPage() {
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               placeholder="Paste the full job listing, interview invitation, or offer message here..."
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-teal-600"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+            className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
           >
             Analyze Job Posting
           </button>
@@ -125,13 +125,13 @@ export function FakeJobDetectionPage() {
         <div className="lg:col-span-5 space-y-6">
           <section
             aria-label="Authenticity assessment preview"
-            className="bg-white border border-slate-200 rounded-xl p-6 space-y-5"
+            className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5"
           >
             <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
                 <p className="text-xs font-medium text-slate-500">Authenticity Risk Score</p>
                 <p className="mt-1 text-3xl font-bold font-mono tabular-nums text-slate-900">
-                  —<span className="text-base font-normal text-slate-400">/100</span>
+                  —<span className="text-base font-normal text-slate-500">/100</span>
                 </p>
               </div>
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
@@ -146,31 +146,31 @@ export function FakeJobDetectionPage() {
               <ul className="space-y-2.5 text-xs text-slate-600">
                 <li className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-slate-300 shrink-0" aria-hidden="true" />
+                    <CheckCircle2 className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
                     Official company domain match
                   </span>
-                  <span className="font-mono text-slate-400">Pending</span>
+                  <span className="text-slate-500">Pending</span>
                 </li>
                 <li className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-slate-300 shrink-0" aria-hidden="true" />
+                    <CheckCircle2 className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
                     Recruiter contact verification
                   </span>
-                  <span className="font-mono text-slate-400">Pending</span>
+                  <span className="text-slate-500">Pending</span>
                 </li>
                 <li className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-slate-300 shrink-0" aria-hidden="true" />
+                    <CheckCircle2 className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
                     Compensation range realism
                   </span>
-                  <span className="font-mono text-slate-400">Pending</span>
+                  <span className="text-slate-500">Pending</span>
                 </li>
                 <li className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4 text-slate-300 shrink-0" aria-hidden="true" />
+                    <AlertTriangle className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
                     Upfront payment or equipment fee flags
                   </span>
-                  <span className="font-mono text-slate-400">Pending</span>
+                  <span className="text-slate-500">Pending</span>
                 </li>
               </ul>
             </div>

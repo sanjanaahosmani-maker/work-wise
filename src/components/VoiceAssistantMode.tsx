@@ -352,10 +352,10 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
           <form
             onSubmit={handleStartVoiceSession}
             noValidate
-            className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 space-y-5"
+            className="lg:col-span-7 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5"
           >
             <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
                 <Mic className="h-4 w-4" aria-hidden="true" />
               </span>
               <div>
@@ -392,13 +392,13 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                       aria-pressed={selected}
                       className={`text-left p-3 rounded-lg border transition-colors ${
                         selected
-                          ? 'border-indigo-600 bg-indigo-50/70'
+                          ? 'border-teal-600 bg-teal-50/70'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
                       <p
                         className={`text-xs font-semibold ${
-                          selected ? 'text-indigo-700' : 'text-slate-900'
+                          selected ? 'text-teal-700' : 'text-slate-900'
                         }`}
                       >
                         {item.label}
@@ -422,7 +422,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   id="voice-role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
                 >
                   {AVAILABLE_ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -443,7 +443,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   id="voice-difficulty"
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as ExperienceLevel)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
                 >
                   {EXPERIENCE_LEVELS.map((lvl) => (
                     <option key={lvl.value} value={lvl.value}>
@@ -468,7 +468,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   value={targetQuestionsText}
                   onChange={(e) => setTargetQuestionsText(e.target.value)}
                   onBlur={() => setTargetQuestionsText(String(getValidCount()))}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
               </div>
             </div>
@@ -484,7 +484,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   type="checkbox"
                   checked={consentGranted}
                   onChange={(e) => setConsentGranted(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-600"
                 />
                 <span>
                   I consent to live microphone listening for speech-to-text transcription during this
@@ -499,7 +499,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   type="checkbox"
                   checked={saveRawAudio}
                   onChange={(e) => setSaveRawAudio(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-600"
                 />
                 <span>
                   Optional: Keep temporary local audio playback in my browser for self-review after
@@ -511,7 +511,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors"
             >
               {loading ? (
                 <>
@@ -528,10 +528,10 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
           </form>
 
           {/* Past Saved Sessions Column */}
-          <aside className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <aside className="lg:col-span-5 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4">
             <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <History className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                <History className="h-4 w-4 text-teal-600" aria-hidden="true" />
                 <h3 className="text-sm font-semibold text-slate-900">Saved Voice Sessions</h3>
               </div>
               <span className="text-xs font-mono tabular-nums text-slate-500">
@@ -554,13 +554,13 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                       setReport(item);
                       setPhase('report');
                     }}
-                    className="w-full text-left p-3.5 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors space-y-1"
+                    className="w-full text-left p-3.5 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors space-y-1"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-slate-900 truncate">
                         {item.role} · {item.interviewType.toUpperCase()}
                       </span>
-                      <span className="font-mono tabular-nums text-xs font-bold text-indigo-700 shrink-0">
+                      <span className="font-mono tabular-nums text-xs font-bold text-teal-700 shrink-0">
                         {item.overallScore}/100
                       </span>
                     </div>
@@ -580,10 +580,10 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
       {phase === 'active' && (
         <div className="max-w-4xl space-y-5">
           {/* Progress Header */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl card-elevated p-5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <div className="flex items-center gap-2 font-medium text-slate-900">
-                <Mic className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                <Mic className="h-4 w-4 text-teal-600" aria-hidden="true" />
                 <span>Voice Assistant</span>
                 <span className="text-slate-300">·</span>
                 <span>
@@ -600,7 +600,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                className="h-full bg-teal-600 rounded-full transition-all duration-300"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -618,7 +618,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
 
           {/* Interviewer Prompt & Persistent Mic HUD */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+            <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5">
               {interviewerMessage && (
                 <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-xs text-slate-600 leading-relaxed">
                   <span className="font-semibold text-slate-800">Interviewer:</span>{' '}
@@ -627,7 +627,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
               )}
 
               <div>
-                <p className="text-xs font-medium text-indigo-600 mb-1">
+                <p className="text-xs font-medium text-teal-600 mb-1">
                   {isFollowUp ? 'Natural Follow-Up Question' : 'Interview Question'}
                 </p>
                 <h2 className="text-lg font-semibold text-slate-900 leading-snug">
@@ -687,7 +687,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                       }
                     }}
                     placeholder="Type an answer if microphone is unavailable..."
-                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
                   <button
                     type="button"
@@ -699,7 +699,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                         { hasAudio: saveRawAudio }
                       )
                     }
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition-colors whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-lg transition-colors whitespace-nowrap"
                   >
                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                     Submit Answer
@@ -709,10 +709,10 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
             </div>
 
             {/* Persistent Microphone Control & Live Waveform Card */}
-            <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+            <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-700">Voice Status</span>
-                <span className="font-mono text-xs font-semibold text-indigo-700">
+                <span className="font-mono text-xs font-semibold text-teal-700">
                   {stateLabelMap[voice.engineState]}
                 </span>
               </div>
@@ -722,7 +722,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                 <div className="relative flex items-center justify-center">
                   {voice.engineState === 'listening' && !voice.isPaused && (
                     <span
-                      className="absolute h-24 w-24 rounded-full bg-indigo-400/25 animate-ping"
+                      className="absolute h-24 w-24 rounded-full bg-teal-400/25 animate-ping"
                       aria-hidden="true"
                     />
                   )}
@@ -739,8 +739,8 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                       voice.engineState === 'listening'
                         ? 'bg-red-600 hover:bg-red-700'
                         : voice.engineState === 'speaking'
-                          ? 'bg-sky-600 hover:bg-sky-700'
-                          : 'bg-indigo-600 hover:bg-indigo-700'
+                          ? 'bg-amber-600 hover:bg-amber-700'
+                          : 'bg-teal-600 hover:bg-teal-700'
                     }`}
                   >
                     {voice.engineState === 'processing' || loading ? (
@@ -765,9 +765,9 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                       key={idx}
                       className={`w-1.5 rounded-full transition-all duration-100 ${
                         voice.engineState === 'listening' && !voice.isPaused
-                          ? 'bg-indigo-600'
+                          ? 'bg-teal-600'
                           : voice.engineState === 'speaking'
-                            ? 'bg-sky-500'
+                            ? 'bg-amber-500'
                             : 'bg-slate-200'
                       }`}
                       style={{

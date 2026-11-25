@@ -72,7 +72,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-xl card-elevated w-full max-w-md p-6 shadow-xl">
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 id="auth-modal-title" className="text-xl font-bold text-slate-900">
@@ -116,7 +116,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Priya Nair"
                 autoComplete="name"
-                className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600"
                 required
               />
             </div>
@@ -133,7 +133,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600"
               required
             />
           </div>
@@ -149,7 +149,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === 'register' ? 'At least 8 characters' : 'Enter your password'}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600"
               required
             />
           </div>
@@ -169,7 +169,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat your password"
                 autoComplete="new-password"
-                className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600"
                 required
               />
             </div>
@@ -178,7 +178,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
+            className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors"
           >
             {submitting
               ? mode === 'login'
@@ -198,7 +198,7 @@ export function AuthModal({ mode, onClose, onSwitchMode, onSuccess }: AuthModalP
               setError('');
               onSwitchMode(mode === 'login' ? 'register' : 'login');
             }}
-            className="font-semibold text-indigo-600 hover:text-indigo-700"
+            className="font-semibold text-teal-600 hover:text-teal-700"
           >
             {mode === 'login' ? 'Register' : 'Log In'}
           </button>

@@ -8,6 +8,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { SAMPLE_ATS_RESUME, SAMPLE_JOB_DESCRIPTION } from '../data/catalog';
 import { apiRequest } from '../lib/api';
 import type { AtsAnalysisResult, AtsDeepReview } from '../types';
@@ -230,7 +231,7 @@ export function AtsCheckerPage({
         <form
           onSubmit={handleAnalyze}
           noValidate
-          className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 space-y-5"
+          className="lg:col-span-7 bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5"
         >
           {error && (
             <div
@@ -261,7 +262,7 @@ export function AtsCheckerPage({
               onDrop={handleDrop}
               className={`mb-3 rounded-lg border border-dashed px-4 py-3 transition-colors ${
                 isDragging
-                  ? 'border-indigo-500 bg-indigo-50/70'
+                  ? 'border-teal-600 bg-teal-50/70'
                   : 'border-slate-300 bg-slate-50/70'
               }`}
             >
@@ -276,7 +277,7 @@ export function AtsCheckerPage({
               />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-indigo-600">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-teal-600">
                     {extractingFile ? (
                       <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                     ) : (
@@ -333,7 +334,7 @@ export function AtsCheckerPage({
                 if (uploadedFileMeta) setUploadedFileMeta(null);
               }}
               placeholder="Paste your plain-text or Markdown resume here, or upload PDF / DOCX / TXT above..."
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-teal-600"
               required
             />
           </div>
@@ -348,7 +349,7 @@ export function AtsCheckerPage({
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               placeholder="Paste the target job description to compare required keywords..."
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-teal-600"
             />
           </div>
 
@@ -356,7 +357,7 @@ export function AtsCheckerPage({
             <button
               type="submit"
               disabled={analyzing}
-              className="flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
+              className="flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors"
             >
               {analyzing ? (
                 <>
@@ -380,7 +381,7 @@ export function AtsCheckerPage({
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                  <Sparkles className="h-4 w-4 text-teal-600" aria-hidden="true" />
                   AI Recruiter Review
                 </>
               )}
@@ -391,9 +392,12 @@ export function AtsCheckerPage({
         {/* Results Column */}
         <div className="lg:col-span-5 space-y-6">
           {result ? (
-            <section
+            <motion.section
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               aria-label="ATS analysis results"
-              className="bg-white border border-slate-200 rounded-xl p-6 space-y-6"
+              className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-6"
             >
               <div className="flex items-baseline justify-between pb-5 border-b border-slate-200">
                 <div>
@@ -415,9 +419,11 @@ export function AtsCheckerPage({
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-600 rounded-full transition-all duration-300"
-                      style={{ width: `${result.keyword_match}%` }}
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${result.keyword_match}%` }}
+                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      className="h-full bg-teal-600 rounded-full"
                     />
                   </div>
                 </div>
@@ -489,32 +495,25 @@ export function AtsCheckerPage({
                   ))}
                 </ul>
               </div>
-            </section>
+            </motion.section>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
+            <div className="bg-white border border-slate-200 rounded-xl card-elevated p-10 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500 mb-4">
                 <FileSearch className="h-6 w-6" aria-hidden="true" />
               </div>
               <h2 className="text-base font-semibold text-slate-900 mb-1.5">
                 Ready for ATS analysis
               </h2>
-              <p className="text-sm text-slate-500 mb-5">
+              <p className="text-sm text-slate-500">
                 Paste your resume and an optional job description on the left to inspect ATS readiness and keyword gaps.
               </p>
-              <button
-                type="button"
-                onClick={handleLoadSample}
-                className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-              >
-                Load Sample Resume &amp; JD
-              </button>
             </div>
           )}
 
           {deepReview && (
             <section
               aria-label="AI recruiter deep review"
-              className="bg-white border border-slate-200 rounded-xl p-6 space-y-4"
+              className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-4"
             >
               <h2 className="text-base font-semibold text-slate-900">AI Recruiter Deep Review</h2>
               <p className="text-sm text-slate-700 leading-relaxed">{deepReview.summary}</p>

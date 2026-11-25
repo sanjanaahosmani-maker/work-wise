@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Menu, Moon, Sun } from 'lucide-react';
+import { Menu, MessageSquareText, Moon, Sun } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AtsCheckerPage } from './components/AtsCheckerPage';
 import { FakeJobDetectionPage } from './components/FakeJobDetectionPage';
 import { InterviewQaPage } from './components/InterviewQaPage';
@@ -233,7 +234,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-[#F5F7F8] text-slate-900">
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
@@ -261,7 +262,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveView('overview')}
-                className="hidden sm:inline text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap"
+                className="hidden sm:inline text-slate-500 hover:text-teal-700 transition-colors whitespace-nowrap font-medium"
               >
                 Workspace
               </button>
@@ -275,12 +276,14 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               type="button"
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
               {theme === 'dark' ? (
                 <>
@@ -293,15 +296,18 @@ export default function App() {
                   <span className="hidden sm:inline">Dark</span>
                 </>
               )}
-            </button>
+            </motion.button>
             {activeView !== 'interview-qa' && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => setActiveView('interview-qa')}
-                className="px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors whitespace-nowrap shrink-0 shadow-xs"
               >
+                <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
                 Interview Q&amp;A
-              </button>
+              </motion.button>
             )}
           </div>
         </header>
@@ -309,51 +315,61 @@ export default function App() {
         {/* Main Workspace Canvas */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           <div className="max-w-6xl mx-auto">
-            {activeView === 'overview' && (
-              <OverviewPage stats={stats} onNavigate={setActiveView} />
-            )}
-            {activeView === 'resume-builder' && (
-              <ResumeBuilderPage
-                onResumeGenerated={handleResumeGenerated}
-                onSendToAts={handleSendToAts}
-              />
-            )}
-            {activeView === 'ats-checker' && (
-              <AtsCheckerPage
-                initialResumeText={sharedResumeText}
-                onAnalysisComplete={handleAtsComplete}
-              />
-            )}
-            {activeView === 'interview-qa' && (
-              <InterviewQaPage
-                onQuestionPracticed={handleQuestionPracticed}
-                onKnowMore={(payload) => {
-                  setPendingStudyConcept(payload);
-                  setActiveView('study-concepts');
-                }}
-              />
-            )}
-            {activeView === 'study-concepts' && (
-              <StudyConceptsPage
-                studiedTopics={stats.topicsStudied}
-                onToggleTopicStudied={handleToggleTopicStudied}
-                initialConcept={pendingStudyConcept}
-                onClearInitialConcept={() => setPendingStudyConcept(null)}
-              />
-            )}
-            {activeView === 'mock-interview' && (
-              <MockInterviewPage onSessionCompleted={handleMockCompleted} />
-            )}
-            {activeView === 'fake-job-detection' && <FakeJobDetectionPage />}
-            {activeView === 'profile' && (
-              <ProfilePage
-                user={user}
-                profile={activeProfile}
-                onSaveProfile={handleSaveProfile}
-                stats={stats}
-                onNavigate={setActiveView}
-              />
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeView}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                {activeView === 'overview' && (
+                  <OverviewPage stats={stats} onNavigate={setActiveView} />
+                )}
+                {activeView === 'resume-builder' && (
+                  <ResumeBuilderPage
+                    onResumeGenerated={handleResumeGenerated}
+                    onSendToAts={handleSendToAts}
+                  />
+                )}
+                {activeView === 'ats-checker' && (
+                  <AtsCheckerPage
+                    initialResumeText={sharedResumeText}
+                    onAnalysisComplete={handleAtsComplete}
+                  />
+                )}
+                {activeView === 'interview-qa' && (
+                  <InterviewQaPage
+                    onQuestionPracticed={handleQuestionPracticed}
+                    onKnowMore={(payload) => {
+                      setPendingStudyConcept(payload);
+                      setActiveView('study-concepts');
+                    }}
+                  />
+                )}
+                {activeView === 'study-concepts' && (
+                  <StudyConceptsPage
+                    studiedTopics={stats.topicsStudied}
+                    onToggleTopicStudied={handleToggleTopicStudied}
+                    initialConcept={pendingStudyConcept}
+                    onClearInitialConcept={() => setPendingStudyConcept(null)}
+                  />
+                )}
+                {activeView === 'mock-interview' && (
+                  <MockInterviewPage onSessionCompleted={handleMockCompleted} />
+                )}
+                {activeView === 'fake-job-detection' && <FakeJobDetectionPage />}
+                {activeView === 'profile' && (
+                  <ProfilePage
+                    user={user}
+                    profile={activeProfile}
+                    onSaveProfile={handleSaveProfile}
+                    stats={stats}
+                    onNavigate={setActiveView}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>

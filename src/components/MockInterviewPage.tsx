@@ -10,6 +10,7 @@ import {
   Play,
   RotateCcw,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { AVAILABLE_ROLES, EXPERIENCE_LEVELS } from '../data/catalog';
 import { apiRequest } from '../lib/api';
 import type {
@@ -164,7 +165,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
   const handleDownloadReport = () => {
     if (!summary) return;
     const lines = [
-      `AI Interview Prep Suite — Mock Interview Report`,
+      `IntervYou — Mock Interview Report`,
       `Role: ${summary.role} (${summary.experience_level})`,
       `Average Score: ${summary.average_score}%`,
       `Questions Answered: ${summary.responses_count}/${summary.total_questions}`,
@@ -220,20 +221,22 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
         aria-label="Mock interview mode"
         className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl"
       >
-        <button
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.99 }}
           type="button"
           role="tab"
           aria-selected={mode === 'text'}
           onClick={() => setMode('text')}
-          className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-colors ${
+          className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-all card-elevated ${
             mode === 'text'
-              ? 'border-indigo-600 bg-indigo-50/60'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              ? 'border-teal-600 bg-teal-50/60 shadow-sm'
+              : 'border-slate-200 bg-white hover:border-teal-300'
           }`}
         >
           <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-              mode === 'text' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+              mode === 'text' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600'
             }`}
           >
             <MessageSquareText className="h-4 w-4" aria-hidden="true" />
@@ -244,22 +247,24 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
               Written Q&amp;A session with timed tracking and rubric scoring
             </p>
           </div>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.99 }}
           type="button"
           role="tab"
           aria-selected={mode === 'voice'}
           onClick={() => setMode('voice')}
-          className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-colors ${
+          className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-all card-elevated ${
             mode === 'voice'
-              ? 'border-indigo-600 bg-indigo-50/60'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              ? 'border-teal-600 bg-teal-50/60 shadow-sm'
+              : 'border-slate-200 bg-white hover:border-teal-300'
           }`}
         >
           <span
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-              mode === 'voice' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+              mode === 'voice' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600'
             }`}
           >
             <Mic className="h-4 w-4" aria-hidden="true" />
@@ -270,7 +275,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
               Spoken AI interviewer with live speech detection, follow-ups &amp; fluency score
             </p>
           </div>
-        </button>
+        </motion.button>
       </div>
 
       {mode === 'voice' ? (
@@ -279,7 +284,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
         <>
           {/* PHASE 1: SETUP */}
           {phase === 'setup' && (
-        <div className="max-w-xl bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
+        <div className="max-w-2xl bg-white border border-slate-200 rounded-xl card-elevated p-6 sm:p-8">
           <h2 className="text-base font-semibold text-slate-900 pb-3 border-b border-slate-200 mb-5">
             Configure Interview Session
           </h2>
@@ -302,7 +307,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                 id="mock-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
                 required
               >
                 <option value="">Select a role...</option>
@@ -326,7 +331,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                   id="mock-level"
                   value={experienceLevel}
                   onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
                 >
                   {EXPERIENCE_LEVELS.map((lvl) => (
                     <option key={lvl.value} value={lvl.value}>
@@ -351,7 +356,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                   value={numQuestionsText}
                   onChange={(e) => setNumQuestionsText(e.target.value)}
                   onBlur={() => setNumQuestionsText(String(getValidCount()))}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
               </div>
             </div>
@@ -366,14 +371,14 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
                 placeholder="e.g., FinTech, SaaS, Cloud Infrastructure"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors"
             >
               {loading ? (
                 <>
@@ -395,7 +400,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
       {phase === 'active' && currentQuestion && (
         <div className="max-w-3xl space-y-5">
           {/* Progress Header */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl card-elevated p-5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <div className="font-medium text-slate-900">
                 Question{' '}
@@ -411,7 +416,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                className="h-full bg-teal-600 rounded-full transition-all duration-300"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -423,16 +428,15 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                 <span className="font-semibold text-slate-900">Previous answer scored:</span>{' '}
                 {lastFeedback.feedback.detailed_feedback}
               </p>
-              <span className="font-mono tabular-nums font-bold text-indigo-700 shrink-0">
+              <span className="font-mono tabular-nums font-bold text-teal-700 shrink-0">
                 {lastFeedback.feedback.score}/100
               </span>
             </div>
           )}
 
           {/* Question & Answer Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+          <div className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-5">
             <div>
-              <p className="text-xs font-medium text-slate-500 mb-1.5">Interview Question</p>
               <h2 className="text-lg font-semibold text-slate-900 leading-snug">
                 {currentQuestion.question}
               </h2>
@@ -460,13 +464,13 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Type your response here. Cover architecture, trade-offs, and concrete examples..."
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg leading-relaxed focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
             </div>
 
             {showIdeal && (
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1.5">
-                <p className="text-xs font-semibold text-indigo-700">Ideal Answer Reference</p>
+                <p className="text-xs font-semibold text-teal-700">Ideal Answer Reference</p>
                 <p className="text-sm text-slate-700 leading-relaxed">
                   {currentQuestion.ideal_answer}
                 </p>
@@ -495,7 +499,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                   type="button"
                   onClick={handleSubmitAnswer}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
                 >
                   {loading ? (
                     <>
@@ -517,7 +521,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
       {/* PHASE 3: RESULTS SUMMARY */}
       {phase === 'results' && summary && (
         <div className="max-w-3xl space-y-6">
-          <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
+          <section className="bg-white border border-slate-200 rounded-xl card-elevated p-6 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -542,7 +546,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                 <button
                   type="button"
                   onClick={handleReturnToSetup}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors whitespace-nowrap"
                 >
                   <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                   Start New Interview
@@ -559,7 +563,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
               </div>
               <div className="p-4 bg-slate-50 rounded-lg">
                 <p className="text-xs text-slate-500">Average Score</p>
-                <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-indigo-700">
+                <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-teal-700">
                   {summary.average_score}%
                 </p>
               </div>
@@ -582,7 +586,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                     <h4 className="text-sm font-semibold text-slate-900">
                       {idx + 1}. {entry.question}
                     </h4>
-                    <span className="font-mono tabular-nums text-sm font-bold text-indigo-700 shrink-0">
+                    <span className="font-mono tabular-nums text-sm font-bold text-teal-700 shrink-0">
                       {entry.feedback.score}/100
                     </span>
                   </div>
