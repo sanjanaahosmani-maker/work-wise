@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { ExperienceLevel } from '../src/types.js';
@@ -36,19 +37,41 @@ export interface StoredVoiceSession {
   report: VoiceSessionReport | null;
 }
 
-const DATA_DIR = path.resolve(process.cwd(), '.data');
-const DB_PATH = path.join(DATA_DIR, 'intervyou.db');
+function resolveDbPath(): string {
+  const candidates =
+    process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+      ? [path.join(os.tmpdir(), 'intervyou-data')]
+      : [path.resolve(process.cwd(), '.data'), path.join(os.tmpdir(), 'intervyou-data')];
+
+  for (const dir of candidates) {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.accessSync(dir, fs.constants.W_OK);
+      return path.join(dir, 'intervyou.db');
+    } catch {
+      // Try next writable location
+    }
+  }
+
+  return ':memory:';
+}
 
 let dbInstance: DatabaseSync | null = null;
 
 function getDb(): DatabaseSync {
   if (dbInstance) return dbInstance;
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  const dbPath = resolveDbPath();
+  const db = new DatabaseSync(dbPath);
+  if (dbPath !== ':memory:') {
+    try {
+      db.exec('PRAGMA journal_mode = WAL;');
+    } catch {
+      // Fallback to default journal mode if WAL is unsupported
+    }
   }
-  const db = new DatabaseSync(DB_PATH);
   db.exec(`
-    PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS voice_sessions (
       id TEXT PRIMARY KEY,
       role TEXT NOT NULL,
