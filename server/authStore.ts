@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { AuthUser } from '../src/types';
+import type { AuthUser } from '../src/types.js';
 
 interface StoredUser {
   id: string;

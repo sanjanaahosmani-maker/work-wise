@@ -8,7 +8,7 @@ import type {
   StudyLevel,
   StudyPathMap,
   TopicDetails,
-} from '../src/types';
+} from '../src/types.js';
 import {
   buildFallbackAtsDeepReview,
   buildFallbackQuestions,
@@ -18,15 +18,15 @@ import {
   ensureCompleteStudyPath,
   ensureExactQuestionCount,
   evaluateAnswerFallback,
-} from '../src/utils/fallbackGenerators';
-import { buildBaselineOptimization } from '../src/utils/resumeHelpers';
+} from '../src/utils/fallbackGenerators.js';
+import { buildBaselineOptimization } from '../src/utils/resumeHelpers.js';
 import {
   aggregateVoiceSessionMetrics,
   buildVoiceSessionReportFallback,
   type SpeechTurnMetrics,
   type VoiceInterviewType,
   type VoiceSessionReport,
-} from '../src/utils/voiceMetrics';
+} from '../src/utils/voiceMetrics.js';
 
 const Type = {
   OBJECT: 'object',

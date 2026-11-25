@@ -9,10 +9,10 @@ import type {
   StudyPathMap,
   StudyTopic,
   TopicDetails,
-} from '../types';
-import { CURATED_QUESTIONS, CURATED_STUDY_PATHS } from '../data/catalog';
-import { analyzeAtsResume, extractKeywords } from './atsScoring';
-import { buildBaselineOptimization, categorizeSkills } from './resumeHelpers';
+} from '../types.js';
+import { CURATED_QUESTIONS, CURATED_STUDY_PATHS } from '../data/catalog.js';
+import { analyzeAtsResume, extractKeywords } from './atsScoring.js';
+import { buildBaselineOptimization, categorizeSkills } from './resumeHelpers.js';
 
 /**
  * Formats a candidate profile into a clean, ATS-friendly Markdown resume

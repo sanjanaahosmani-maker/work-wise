@@ -3,7 +3,7 @@ import {
   MAX_RESUME_FILE_BYTES,
   stripHtmlToText,
   stripRtfToText,
-} from '../src/utils/fileParsing';
+} from '../src/utils/fileParsing.js';
 
 export interface ExtractedResumeResult {
   text: string;

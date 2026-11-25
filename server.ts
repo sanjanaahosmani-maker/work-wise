@@ -9,7 +9,7 @@ import {
   revokeSessionToken,
   verifyAccount,
   verifySessionToken,
-} from './server/authStore';
+} from './server/authStore.js';
 import {
   correctAndStructureResumeWithAI,
   deepReviewAtsWithAI,
@@ -22,11 +22,11 @@ import {
   generateVoiceOpeningWithAI,
   analyzeVoiceInterviewWithAI,
   optimizeResumeWithAI,
-} from './server/gemini';
+} from './server/gemini.js';
 import {
   extractResumeTextFromBase64,
   FileExtractionError,
-} from './server/resumeExtractor';
+} from './server/resumeExtractor.js';
 import {
   appendVoiceQuestionTurn,
   completeVoiceSession,
@@ -34,18 +34,18 @@ import {
   getVoiceSession,
   listCompletedVoiceReports,
   recordVoiceAnswerTurn,
-} from './server/voiceSessionStore';
-import { AVAILABLE_ROLES } from './src/data/catalog';
+} from './server/voiceSessionStore.js';
+import { AVAILABLE_ROLES } from './src/data/catalog.js';
 import type {
   ExperienceLevel,
   InterviewQuestion,
   MockFeedbackEntry,
   ResumeFormData,
   StudyLevel,
-} from './src/types';
-import { analyzeAtsResume } from './src/utils/atsScoring';
-import { buildBaselineOptimization } from './src/utils/resumeHelpers';
-import { computeTurnSpeechMetrics, type SpeechTurnMetrics, type VoiceInterviewType } from './src/utils/voiceMetrics';
+} from './src/types.js';
+import { analyzeAtsResume } from './src/utils/atsScoring.js';
+import { buildBaselineOptimization } from './src/utils/resumeHelpers.js';
+import { computeTurnSpeechMetrics, type SpeechTurnMetrics, type VoiceInterviewType } from './src/utils/voiceMetrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

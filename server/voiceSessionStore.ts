@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { ExperienceLevel } from '../src/types';
+import type { ExperienceLevel } from '../src/types.js';
 import type {
   SpeechTurnMetrics,
   VoiceInterviewType,
   VoiceSessionReport,
-} from '../src/utils/voiceMetrics';
+} from '../src/utils/voiceMetrics.js';
 
 export interface StoredVoiceTurn {
   id: number;
