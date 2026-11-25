@@ -1,18 +1,28 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react';
 import {
   ArrowRight,
   Check,
   Copy,
   Download,
   FileText,
+  FileUp,
+  Linkedin,
   Loader2,
   Printer,
   RotateCcw,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { AVAILABLE_ROLES, SAMPLE_RESUME_PROFILE } from '../data/catalog';
 import { apiRequest } from '../lib/api';
 import type { ResumeFormData, ResumeOptimization } from '../types';
-import type { ResumeDownloadFormat } from '../utils/fileParsing';
+import {
+  ACCEPTED_RESUME_EXTENSIONS,
+  getSupportedExtension,
+  MAX_RESUME_FILE_BYTES,
+  readFileAsBase64,
+  type ResumeDownloadFormat,
+} from '../utils/fileParsing';
 import { exportResumeFile } from '../utils/resumeExport';
 import { parseResumeMarkdown } from '../utils/resumeHelpers';
 
@@ -40,18 +50,50 @@ export function ResumeBuilderPage({
   const [form, setForm] = useState<ResumeFormData>(EMPTY_FORM);
   const [resumeMarkdown, setResumeMarkdown] = useState('');
   const [optimization, setOptimization] = useState<ResumeOptimization | null>(null);
+  const [correctionsSummary, setCorrectionsSummary] = useState<string[]>([]);
+  const [additionalRequirements, setAdditionalRequirements] = useState('');
+  const [importMode, setImportMode] = useState<'file' | 'linkedin'>('file');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [linkedinText, setLinkedinText] = useState('');
+  const [uploadedFileMeta, setUploadedFileMeta] = useState<{
+    name: string;
+    type: string;
+  } | null>(null);
+  const [importingFile, setImportingFile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState<ResumeDownloadFormat>('pdf');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const updateField = <K extends keyof ResumeFormData>(key: K, value: ResumeFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const fetchOptimization = async (resumeText: string, targetRole: string) => {
+    try {
+      const optRes = await apiRequest<{
+        success: boolean;
+        suggestions: ResumeOptimization;
+      }>('/resume/optimize', {
+        method: 'POST',
+        body: JSON.stringify({
+          resume_text: resumeText,
+          target_role: targetRole,
+        }),
+      });
+      setOptimization(optRes.suggestions);
+    } catch {
+      setOptimization(null);
+    }
+  };
+
   const handleLoadSample = () => {
     setForm(SAMPLE_RESUME_PROFILE);
+    setCorrectionsSummary([]);
+    setUploadedFileMeta(null);
     setError('');
   };
 
@@ -59,7 +101,125 @@ export function ResumeBuilderPage({
     setForm(EMPTY_FORM);
     setResumeMarkdown('');
     setOptimization(null);
+    setCorrectionsSummary([]);
+    setAdditionalRequirements('');
+    setLinkedinUrl('');
+    setLinkedinText('');
+    setUploadedFileMeta(null);
     setError('');
+  };
+
+  const applyCorrectedResumeResult = async (res: {
+    profile: ResumeFormData;
+    resume: string;
+    corrections_summary: string[];
+  }) => {
+    setForm(res.profile);
+    setResumeMarkdown(res.resume);
+    setCorrectionsSummary(res.corrections_summary ?? []);
+    onResumeGenerated(res.resume);
+    await fetchOptimization(res.resume, res.profile.target_role || 'Software Engineer');
+  };
+
+  const processUploadedResumeFile = async (file: File) => {
+    setError('');
+    const ext = getSupportedExtension(file.name);
+    if (ext === '.doc') {
+      setError(
+        'Legacy binary .doc files are not supported directly. Please save as .docx, .pdf, or .txt.'
+      );
+      return;
+    }
+    if (file.size === 0) {
+      setError('Uploaded file appears to be empty.');
+      return;
+    }
+    if (file.size > MAX_RESUME_FILE_BYTES) {
+      setError('File exceeds the 5 MB size limit.');
+      return;
+    }
+
+    setImportingFile(true);
+    try {
+      const base64 = await readFileAsBase64(file);
+      const res = await apiRequest<{
+        success: boolean;
+        file_name: string;
+        file_type: string;
+        profile: ResumeFormData;
+        resume: string;
+        corrections_summary: string[];
+      }>('/resume/correct-from-file', {
+        method: 'POST',
+        body: JSON.stringify({
+          file_name: file.name,
+          content_base64: base64,
+          target_role: form.target_role,
+          additional_requirements: additionalRequirements,
+        }),
+      });
+
+      setUploadedFileMeta({ name: res.file_name, type: res.file_type });
+      await applyCorrectedResumeResult(res);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to extract and correct uploaded resume.'
+      );
+    } finally {
+      setImportingFile(false);
+    }
+  };
+
+  const handleImportLinkedIn = async () => {
+    setError('');
+    if (!linkedinUrl.trim() && !linkedinText.trim()) {
+      setError('Please enter your LinkedIn profile URL or paste your LinkedIn profile details.');
+      return;
+    }
+
+    setImportingFile(true);
+    try {
+      const res = await apiRequest<{
+        success: boolean;
+        profile: ResumeFormData;
+        resume: string;
+        corrections_summary: string[];
+      }>('/resume/from-linkedin', {
+        method: 'POST',
+        body: JSON.stringify({
+          linkedin_url: linkedinUrl.trim(),
+          linkedin_text: linkedinText.trim(),
+          target_role: form.target_role,
+          additional_requirements: additionalRequirements,
+        }),
+      });
+
+      setUploadedFileMeta(null);
+      await applyCorrectedResumeResult(res);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to create resume from LinkedIn profile.'
+      );
+    } finally {
+      setImportingFile(false);
+    }
+  };
+
+  const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) {
+      await processUploadedResumeFile(file);
+    }
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processUploadedResumeFile(file);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -77,6 +237,7 @@ export function ResumeBuilderPage({
     }
 
     setLoading(true);
+    setCorrectionsSummary([]);
     try {
       const genRes = await apiRequest<{ success: boolean; resume: string }>(
         '/resume/generate',
@@ -88,23 +249,7 @@ export function ResumeBuilderPage({
 
       setResumeMarkdown(genRes.resume);
       onResumeGenerated(genRes.resume);
-
-      // Fetch optimization suggestions (non-blocking)
-      try {
-        const optRes = await apiRequest<{
-          success: boolean;
-          suggestions: ResumeOptimization;
-        }>('/resume/optimize', {
-          method: 'POST',
-          body: JSON.stringify({
-            resume_text: genRes.resume,
-            target_role: form.target_role,
-          }),
-        });
-        setOptimization(optRes.suggestions);
-      } catch {
-        setOptimization(null);
-      }
+      await fetchOptimization(genRes.resume, form.target_role);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate resume.');
     } finally {
@@ -169,12 +314,183 @@ export function ResumeBuilderPage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Profile Input Form */}
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 space-y-3.5 no-print"
-        >
+        {/* Left Column: Import & Fix Existing Resume + Profile Form */}
+        <div className="lg:col-span-5 space-y-5 no-print">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3.5">
+            <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-200">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                  Import &amp; AI-Correct Resume
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Upload any resume file or import from your LinkedIn profile and AI will build a corrected, ATS-ready resume.
+                </p>
+              </div>
+              {uploadedFileMeta && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFileMeta(null);
+                    setCorrectionsSummary([]);
+                  }}
+                  title="Clear uploaded file"
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setImportMode('file')}
+                className={`inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors ${
+                  importMode === 'file'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+                Upload File
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportMode('linkedin')}
+                className={`inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors ${
+                  importMode === 'linkedin'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
+                LinkedIn Profile
+              </button>
+            </div>
+
+            <div>
+              <label
+                htmlFor="rb-extra-req"
+                className="block text-xs font-medium text-slate-700 mb-1"
+              >
+                Additional Requirements / Focus (optional)
+              </label>
+              <input
+                id="rb-extra-req"
+                type="text"
+                value={additionalRequirements}
+                onChange={(e) => setAdditionalRequirements(e.target.value)}
+                placeholder="e.g., Tailor for Senior Backend, emphasize AWS & metrics"
+                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {importMode === 'file' ? (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => !importingFile && fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
+                  isDragging
+                    ? 'border-indigo-500 bg-indigo-50/70'
+                    : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={`${ACCEPTED_RESUME_EXTENSIONS.join(',')},text/*`}
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                  aria-label="Upload existing resume file"
+                />
+                {importingFile ? (
+                  <div className="flex flex-col items-center gap-1.5 py-2 text-indigo-600">
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                    <span className="text-xs font-medium">
+                      Extracting details &amp; preparing corrected resume...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 py-1">
+                    <FileUp className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+                    <p className="text-xs font-medium text-slate-700">
+                      {uploadedFileMeta
+                        ? `Loaded: ${uploadedFileMeta.name} (${uploadedFileMeta.type}) — drop another to replace`
+                        : 'Drop your resume file here, or click to browse'}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      PDF, DOCX, TXT, MD, RTF, HTML, JSON, CSV, TeX (max 5 MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label
+                    htmlFor="rb-linkedin-url"
+                    className="block text-xs font-medium text-slate-700 mb-1"
+                  >
+                    LinkedIn Profile URL
+                  </label>
+                  <input
+                    id="rb-linkedin-url"
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://www.linkedin.com/in/your-username"
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="rb-linkedin-text"
+                    className="block text-xs font-medium text-slate-700 mb-1"
+                  >
+                    LinkedIn Profile Details (About, Experience, Education, Skills)
+                  </label>
+                  <textarea
+                    id="rb-linkedin-text"
+                    rows={4}
+                    value={linkedinText}
+                    onChange={(e) => setLinkedinText(e.target.value)}
+                    placeholder="Paste your LinkedIn profile text here (recommended if your profile is private or login-gated). Tip: You can also export PDF from LinkedIn (More → Save to PDF) and upload it in Upload File."
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={importingFile || loading}
+                  onClick={handleImportLinkedIn}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 rounded-lg transition-colors"
+                >
+                  {importingFile ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                      Building Resume from LinkedIn...
+                    </>
+                  ) : (
+                    <>
+                      <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
+                      Create Resume from LinkedIn
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3.5"
+          >
           <div className="pb-2.5 border-b border-slate-200">
             <h2 className="text-base font-semibold text-slate-900">Candidate Profile</h2>
             <p className="text-xs text-slate-500 mt-0.5">Fields marked with * are required.</p>
@@ -248,6 +564,9 @@ export function ResumeBuilderPage({
                 required
               >
                 <option value="">Select a role...</option>
+                {form.target_role && !AVAILABLE_ROLES.includes(form.target_role) && (
+                  <option value={form.target_role}>{form.target_role}</option>
+                )}
                 {AVAILABLE_ROLES.map((role) => (
                   <option key={role} value={role}>
                     {role}
@@ -335,7 +654,7 @@ export function ResumeBuilderPage({
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || importingFile}
             className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors"
           >
             {loading ? (
@@ -348,6 +667,7 @@ export function ResumeBuilderPage({
             )}
           </button>
         </form>
+        </div>
 
         {/* Output Preview & Optimization Column */}
         <div className="lg:col-span-7 space-y-6">
@@ -480,6 +800,20 @@ export function ResumeBuilderPage({
                   })}
                 </article>
               </div>
+
+              {correctionsSummary.length > 0 && (
+                <section className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-5 space-y-2.5 no-print">
+                  <h2 className="text-sm font-semibold text-emerald-900 flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                    AI Corrections Applied
+                  </h2>
+                  <ul className="space-y-1 text-xs text-emerald-900 list-disc pl-5">
+                    {correctionsSummary.map((note, idx) => (
+                      <li key={idx}>{note}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {optimization && (
                 <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 no-print">

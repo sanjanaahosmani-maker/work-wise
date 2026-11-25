@@ -1,41 +1,139 @@
-import { useState, type FormEvent } from 'react';
-import { Eye, Loader2, MessageSquareText, Send, X } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Eye,
+  Loader2,
+  MessageSquareText,
+  Send,
+} from 'lucide-react';
 import { AVAILABLE_ROLES, CURATED_QUESTIONS, EXPERIENCE_LEVELS } from '../data/catalog';
 import { apiRequest } from '../lib/api';
-import type { AnswerFeedback, ExperienceLevel, InterviewQuestion } from '../types';
+import type {
+  AnswerFeedback,
+  ExperienceLevel,
+  InterviewQuestion,
+  StudyConceptRedirectPayload,
+} from '../types';
 import { buildFallbackQuestions } from '../utils/fallbackGenerators';
 
 interface InterviewQaPageProps {
   onQuestionPracticed: () => void;
+  onKnowMore: (payload: StudyConceptRedirectPayload) => void;
 }
 
-export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
-  const [role, setRole] = useState('Frontend Developer');
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('mid');
-  const [domain, setDomain] = useState('');
-  const [countText, setCountText] = useState('5');
+const EXAM_STATE_STORAGE_KEY = 'workwise_interview_qa_exam_v1';
+
+interface PersistedExamState {
+  role: string;
+  experienceLevel: ExperienceLevel;
+  domain: string;
+  countText: string;
+  questions: InterviewQuestion[];
+  sourceLabel: string;
+  currentIndex: number;
+  answers: Record<number, string>;
+  feedbackMap: Record<number, AnswerFeedback>;
+}
+
+function loadPersistedExamState(): PersistedExamState | null {
+  try {
+    const raw = sessionStorage.getItem(EXAM_STATE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PersistedExamState>;
+    if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      return null;
+    }
+    return {
+      role: parsed.role || 'Frontend Developer',
+      experienceLevel: parsed.experienceLevel || 'mid',
+      domain: parsed.domain || '',
+      countText: parsed.countText || String(parsed.questions.length),
+      questions: parsed.questions,
+      sourceLabel: parsed.sourceLabel || 'Practice Exam',
+      currentIndex:
+        typeof parsed.currentIndex === 'number'
+          ? Math.max(0, Math.min(parsed.questions.length - 1, parsed.currentIndex))
+          : 0,
+      answers: parsed.answers ?? {},
+      feedbackMap: parsed.feedbackMap ?? {},
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function InterviewQaPage({ onQuestionPracticed, onKnowMore }: InterviewQaPageProps) {
+  const [initial] = useState<PersistedExamState | null>(() => loadPersistedExamState());
+
+  const [role, setRole] = useState(initial?.role ?? 'Frontend Developer');
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(
+    initial?.experienceLevel ?? 'mid'
+  );
+  const [domain, setDomain] = useState(initial?.domain ?? '');
+  const [countText, setCountText] = useState(initial?.countText ?? '5');
 
   const [questions, setQuestions] = useState<InterviewQuestion[]>(
-    CURATED_QUESTIONS['Frontend Developer'].mid
+    initial?.questions ?? CURATED_QUESTIONS['Frontend Developer'].mid
   );
-  const [sourceLabel, setSourceLabel] = useState('Curated Practice Set · Frontend Developer');
+  const [sourceLabel, setSourceLabel] = useState(
+    initial?.sourceLabel ?? 'Curated Practice Set · Frontend Developer'
+  );
+  const [currentIndex, setCurrentIndex] = useState(initial?.currentIndex ?? 0);
+  const [answers, setAnswers] = useState<Record<number, string>>(initial?.answers ?? {});
+  const [feedbackMap, setFeedbackMap] = useState<Record<number, AnswerFeedback>>(
+    initial?.feedbackMap ?? {}
+  );
+  const [showIdealMap, setShowIdealMap] = useState<Record<number, boolean>>({});
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Modal state
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [userAnswer, setUserAnswer] = useState('');
-  const [showIdeal, setShowIdeal] = useState(false);
-  const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [evaluating, setEvaluating] = useState(false);
-  const [modalError, setModalError] = useState('');
+  const [error, setError] = useState('');
+  const [examError, setExamError] = useState('');
 
-  const activeQuestion = activeIndex !== null ? questions[activeIndex] ?? null : null;
+  useEffect(() => {
+    try {
+      const payload: PersistedExamState = {
+        role,
+        experienceLevel,
+        domain,
+        countText,
+        questions,
+        sourceLabel,
+        currentIndex,
+        answers,
+        feedbackMap,
+      };
+      sessionStorage.setItem(EXAM_STATE_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Ignore storage quota issues
+    }
+  }, [role, experienceLevel, domain, countText, questions, sourceLabel, currentIndex, answers, feedbackMap]);
+
+  const currentQuestion = questions[currentIndex] ?? null;
+  const currentAnswer = answers[currentIndex] ?? '';
+  const currentFeedback = feedbackMap[currentIndex] ?? null;
+  const showIdeal = Boolean(showIdealMap[currentIndex]);
+  const answeredCount = Object.keys(feedbackMap).length;
+  const progressPercent =
+    questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   const getValidCount = () => {
     const parsed = Number.parseInt(countText, 10);
     if (!Number.isFinite(parsed)) return 5;
     return Math.max(1, Math.min(15, parsed));
+  };
+
+  const resetExamProgress = (nextQuestions: InterviewQuestion[], nextLabel: string) => {
+    setQuestions(nextQuestions);
+    setSourceLabel(nextLabel);
+    setCurrentIndex(0);
+    setAnswers({});
+    setFeedbackMap({});
+    setShowIdealMap({});
+    setExamError('');
   };
 
   const handleGenerate = async (e: FormEvent) => {
@@ -62,8 +160,7 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
           count: requestedCount,
         }),
       });
-      setQuestions(res.questions);
-      setSourceLabel(`AI Generated · ${role} · ${experienceLevel}`);
+      resetExamProgress(res.questions, `AI Exam · ${role} · ${experienceLevel}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate questions.');
     } finally {
@@ -80,32 +177,26 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
       domain.trim() || role || 'Frontend Developer',
       requestedCount
     );
-    setQuestions(bank);
-    setSourceLabel(`Curated Practice Set · ${role || 'Frontend Developer'} · ${experienceLevel}`);
+    resetExamProgress(
+      bank,
+      `Curated Exam · ${role || 'Frontend Developer'} · ${experienceLevel}`
+    );
     setError('');
   };
 
-  const openQuestionModal = (idx: number) => {
-    setActiveIndex(idx);
-    setUserAnswer('');
-    setShowIdeal(false);
-    setFeedback(null);
-    setModalError('');
-  };
-
-  const closeQuestionModal = () => {
-    setActiveIndex(null);
-    setModalError('');
+  const handleAnswerChange = (value: string) => {
+    setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
+    if (examError) setExamError('');
   };
 
   const handleEvaluate = async () => {
-    if (!activeQuestion) return;
-    if (!userAnswer.trim()) {
-      setModalError('Enter your answer before submitting for evaluation.');
+    if (!currentQuestion) return;
+    if (!currentAnswer.trim()) {
+      setExamError('Enter your answer before submitting for evaluation.');
       return;
     }
 
-    setModalError('');
+    setExamError('');
     setEvaluating(true);
     try {
       const res = await apiRequest<{ success: boolean; feedback: AnswerFeedback }>(
@@ -113,19 +204,36 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
         {
           method: 'POST',
           body: JSON.stringify({
-            question: activeQuestion.question,
-            user_answer: userAnswer,
-            ideal_answer: activeQuestion.ideal_answer,
+            question: currentQuestion.question,
+            user_answer: currentAnswer,
+            ideal_answer: currentQuestion.ideal_answer,
           }),
         }
       );
-      setFeedback(res.feedback);
+      setFeedbackMap((prev) => ({ ...prev, [currentIndex]: res.feedback }));
       onQuestionPracticed();
     } catch (err) {
-      setModalError(err instanceof Error ? err.message : 'Failed to evaluate answer.');
+      setExamError(err instanceof Error ? err.message : 'Failed to evaluate answer.');
     } finally {
       setEvaluating(false);
     }
+  };
+
+  const handleGoToQuestion = (idx: number) => {
+    if (idx < 0 || idx >= questions.length) return;
+    setCurrentIndex(idx);
+    setExamError('');
+  };
+
+  const handleKnowMore = () => {
+    if (!currentQuestion) return;
+    onKnowMore({
+      role: role || 'Software Engineer',
+      question: currentQuestion.question,
+      userAnswer: currentAnswer,
+      idealAnswer: currentQuestion.ideal_answer,
+      keyPoints: currentQuestion.key_points,
+    });
   };
 
   return (
@@ -133,7 +241,7 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Interview Q&amp;A</h1>
         <p className="text-sm text-slate-600 mt-1">
-          Generate role-specific interview questions, rehearse your answers, and receive structured scoring.
+          Configure your question settings, answer each question in exam mode, get instant evaluation, and dive deeper into any concept.
         </p>
       </div>
 
@@ -250,47 +358,234 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
           </div>
         </form>
 
-        {/* Questions List */}
+        {/* Exam Mode Panel */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-slate-500">{sourceLabel}</p>
-            <p className="text-xs font-mono tabular-nums text-slate-500">
-              {questions.length} {questions.length === 1 ? 'question' : 'questions'}
-            </p>
-          </div>
+          {currentQuestion ? (
+            <>
+              {/* Exam Progress Header */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">{sourceLabel}</p>
+                    <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                      Question {currentIndex + 1} of {questions.length}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-mono tabular-nums text-slate-600">
+                      Answered: {answeredCount}/{questions.length} ({progressPercent}%)
+                    </p>
+                  </div>
+                </div>
 
-          {questions.length > 0 ? (
-            <div className="space-y-3">
-              {questions.map((q, idx) => (
-                <div
-                  key={`${q.question.slice(0, 24)}-${idx}`}
-                  className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2 min-w-0">
-                      <p className="text-xs font-mono tabular-nums text-slate-400">
-                        Question {String(idx + 1).padStart(2, '0')}
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {questions.map((_, idx) => {
+                    const isCurrent = idx === currentIndex;
+                    const isAnswered = Boolean(feedbackMap[idx]);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleGoToQuestion(idx)}
+                        aria-label={`Go to question ${idx + 1}`}
+                        className={`h-7 min-w-7 px-2 text-xs font-mono font-medium rounded-md transition-colors ${
+                          isCurrent
+                            ? 'bg-indigo-600 text-white'
+                            : isAnswered
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Exam Question Card */}
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="p-6 space-y-5">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium text-indigo-700 bg-indigo-50 rounded-md">
+                        Question {String(currentIndex + 1).padStart(2, '0')}
+                      </span>
+                      {currentFeedback && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          Answered · {currentFeedback.score}/100
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-semibold text-slate-900 leading-snug">
+                      {currentQuestion.question}
+                    </h2>
+                    {currentQuestion.key_points.length > 0 && (
+                      <p className="text-xs text-slate-500">
+                        Key focus: {currentQuestion.key_points.join(' · ')}
                       </p>
-                      <h3 className="text-base font-semibold text-slate-900 leading-snug">
-                        {q.question}
-                      </h3>
-                      {q.key_points.length > 0 && (
-                        <p className="text-xs text-slate-500">
-                          Key focus: {q.key_points.join(' · ')}
+                    )}
+                  </div>
+
+                  {examError && (
+                    <div
+                      role="alert"
+                      className="px-3.5 py-2.5 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg"
+                    >
+                      {examError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label
+                      htmlFor="qa-exam-answer"
+                      className="block text-xs font-medium text-slate-700 mb-1.5"
+                    >
+                      Your Answer
+                    </label>
+                    <textarea
+                      id="qa-exam-answer"
+                      rows={5}
+                      value={currentAnswer}
+                      onChange={(e) => handleAnswerChange(e.target.value)}
+                      placeholder="Write your answer in exam style—cover architecture, trade-offs, and concrete examples..."
+                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {showIdeal && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+                      <p className="text-xs font-semibold text-indigo-700">Ideal Answer</p>
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        {currentQuestion.ideal_answer}
+                      </p>
+                      {currentQuestion.evaluation_criteria.length > 0 && (
+                        <p className="text-xs text-slate-500 pt-1">
+                          Evaluated on: {currentQuestion.evaluation_criteria.join(' · ')}
                         </p>
                       )}
                     </div>
+                  )}
+
+                  {currentFeedback && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-slate-700">Evaluation Feedback</p>
+                        <p className="text-lg font-bold font-mono tabular-nums text-indigo-700">
+                          {currentFeedback.score}/100
+                        </p>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        {currentFeedback.detailed_feedback}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200 text-xs">
+                        <div>
+                          <p className="font-semibold text-emerald-700 mb-1">Strengths</p>
+                          <ul className="space-y-1 text-slate-700 list-disc pl-4">
+                            {currentFeedback.strengths.map((s, i) => (
+                              <li key={i}>{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-amber-700 mb-1">Areas to Improve</p>
+                          <ul className="space-y-1 text-slate-700 list-disc pl-4">
+                            {currentFeedback.improvements.map((imp, i) => (
+                              <li key={i}>{imp}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={handleKnowMore}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                          Know More
+                        </button>
+                        {currentIndex < questions.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleGoToQuestion(currentIndex + 1)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            Next Question
+                            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-t border-slate-200 bg-slate-50">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowIdealMap((prev) => ({
+                        ...prev,
+                        [currentIndex]: !prev[currentIndex],
+                      }))
+                    }
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                    {showIdeal ? 'Hide Ideal Answer' : 'Show Ideal Answer'}
+                  </button>
+
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => openQuestionModal(idx)}
-                      className="px-3.5 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                      onClick={() => handleGoToQuestion(currentIndex - 1)}
+                      disabled={currentIndex === 0}
+                      className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 rounded-lg"
                     >
-                      Practice Answer
+                      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                      Previous
                     </button>
+                    <button
+                      type="button"
+                      onClick={handleEvaluate}
+                      disabled={evaluating}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      {evaluating ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                          Evaluating...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                          {currentFeedback ? 'Re-submit Answer' : 'Submit Answer'}
+                        </>
+                      )}
+                    </button>
+                    {currentIndex < questions.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleGoToQuestion(currentIndex + 1)}
+                        className="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        Next Question
+                        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            </>
           ) : (
             <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500 mb-4">
@@ -300,157 +595,12 @@ export function InterviewQaPage({ onQuestionPracticed }: InterviewQaPageProps) {
                 No questions loaded yet
               </h2>
               <p className="text-sm text-slate-500">
-                Select your target role on the left and click Generate AI Questions to start practicing.
+                Select your target role on the left and click Generate AI Questions to start your exam.
               </p>
             </div>
           )}
         </div>
       </div>
-
-      {/* Practice Modal */}
-      {activeQuestion && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="qa-modal-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
-              <h2 id="qa-modal-title" className="text-base font-semibold text-slate-900">
-                Practice Question {(activeIndex ?? 0) + 1}
-              </h2>
-              <button
-                type="button"
-                onClick={closeQuestionModal}
-                aria-label="Close question practice modal"
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5 overflow-y-auto">
-              <div>
-                <p className="text-xs font-medium text-slate-500 mb-1">Interview Prompt</p>
-                <p className="text-base font-semibold text-slate-900 leading-relaxed">
-                  {activeQuestion.question}
-                </p>
-              </div>
-
-              {modalError && (
-                <div
-                  role="alert"
-                  className="px-3.5 py-2.5 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg"
-                >
-                  {modalError}
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="qa-user-answer"
-                  className="block text-xs font-medium text-slate-700 mb-1.5"
-                >
-                  Your Answer
-                </label>
-                <textarea
-                  id="qa-user-answer"
-                  rows={5}
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Structure your explanation clearly with trade-offs and concrete examples..."
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              {showIdeal && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
-                  <p className="text-xs font-semibold text-indigo-700">Ideal Answer</p>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {activeQuestion.ideal_answer}
-                  </p>
-                  {activeQuestion.evaluation_criteria.length > 0 && (
-                    <p className="text-xs text-slate-500 pt-1">
-                      Evaluated on: {activeQuestion.evaluation_criteria.join(' · ')}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {feedback && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-700">Evaluation Feedback</p>
-                    <p className="text-lg font-bold font-mono tabular-nums text-indigo-700">
-                      {feedback.score}/100
-                    </p>
-                  </div>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {feedback.detailed_feedback}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200 text-xs">
-                    <div>
-                      <p className="font-semibold text-emerald-700 mb-1">Strengths</p>
-                      <ul className="space-y-1 text-slate-700 list-disc pl-4">
-                        {feedback.strengths.map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-amber-700 mb-1">Areas to Improve</p>
-                      <ul className="space-y-1 text-slate-700 list-disc pl-4">
-                        {feedback.improvements.map((imp, i) => (
-                          <li key={i}>{imp}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowIdeal((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap"
-              >
-                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                {showIdeal ? 'Hide Ideal Answer' : 'Show Ideal Answer'}
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={closeQuestionModal}
-                  className="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-lg"
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  onClick={handleEvaluate}
-                  disabled={evaluating}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap"
-                >
-                  {evaluating ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                      Evaluating...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                      Submit Answer
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import {
   getSupportedExtension,
-  isSupportedResumeExtension,
   MAX_RESUME_FILE_BYTES,
   stripHtmlToText,
   stripRtfToText,
@@ -32,12 +31,27 @@ export async function extractResumeTextFromBase64(
   const ext = getSupportedExtension(cleanName);
   if (ext === '.doc') {
     throw new FileExtractionError(
-      'Legacy .doc files are not supported directly. Please save as .docx, .pdf, or .txt.'
+      'Legacy binary .doc files are not supported directly. Please save as .docx, .pdf, or .txt.'
     );
   }
-  if (!isSupportedResumeExtension(ext)) {
+  const knownBinaryExtensions = new Set([
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.ico',
+    '.zip',
+    '.rar',
+    '.7z',
+    '.exe',
+    '.dll',
+    '.bin',
+  ]);
+  if (knownBinaryExtensions.has(ext)) {
     throw new FileExtractionError(
-      `Unsupported file type (${ext || 'unknown'}). Upload a PDF, DOCX, TXT, MD, RTF, or HTML file.`
+      `Unsupported binary file (${ext}). Please upload a document or text-based resume (PDF, DOCX, TXT, MD, RTF, HTML, JSON, CSV, TeX).`
     );
   }
 
@@ -70,11 +84,18 @@ export async function extractResumeTextFromBase64(
     const mammoth = mammothModule.default ?? mammothModule;
     const result = await mammoth.extractRawText({ buffer });
     extracted = result.value ?? '';
-  } else if (ext === '.html' || ext === '.htm') {
+  } else if (ext === '.html' || ext === '.htm' || ext === '.xml') {
     extracted = stripHtmlToText(buffer.toString('utf8'));
   } else if (ext === '.rtf') {
     extracted = stripRtfToText(buffer.toString('utf8'));
   } else {
+    // Reject arbitrary binary files that contain null bytes
+    const sample = buffer.subarray(0, Math.min(buffer.byteLength, 4096));
+    if (sample.includes(0)) {
+      throw new FileExtractionError(
+        `Unsupported binary file (${ext || 'unknown'}). Please upload a PDF, DOCX, or text-based resume.`
+      );
+    }
     extracted = buffer.toString('utf8');
   }
 

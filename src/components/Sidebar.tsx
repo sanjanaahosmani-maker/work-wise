@@ -4,21 +4,19 @@ import {
   CheckSquare,
   FileText,
   LayoutDashboard,
-  LogIn,
   LogOut,
-  MessageSquareText,
   ShieldAlert,
   Video,
   X,
 } from 'lucide-react';
-import type { AuthUser, WorkspaceStats, WorkspaceView } from '../types';
+import type { AuthUser, WorkspaceView } from '../types';
 
 interface SidebarProps {
   activeView: WorkspaceView;
   onNavigate: (view: WorkspaceView) => void;
-  stats: WorkspaceStats;
-  user: AuthUser | null;
-  onOpenAuth: (mode: 'login' | 'register') => void;
+  user: AuthUser;
+  profilePhotoUrl?: string;
+  displayName?: string;
   onLogout: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -32,7 +30,6 @@ const NAV_ITEMS: {
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'resume-builder', label: 'Resume Builder', icon: FileText },
   { id: 'ats-checker', label: 'ATS Checker', icon: CheckSquare },
-  { id: 'interview-qa', label: 'Interview Q&A', icon: MessageSquareText },
   { id: 'study-concepts', label: 'Study Concepts', icon: BookOpen },
   { id: 'mock-interview', label: 'Mock Interview', icon: Video },
   { id: 'fake-job-detection', label: 'Fake Job Detection', icon: ShieldAlert },
@@ -41,9 +38,9 @@ const NAV_ITEMS: {
 export function Sidebar({
   activeView,
   onNavigate,
-  stats,
   user,
-  onOpenAuth,
+  profilePhotoUrl,
+  displayName,
   onLogout,
   mobileOpen,
   onCloseMobile,
@@ -105,80 +102,56 @@ export function Sidebar({
           );
         })}
 
-        {/* Quiet Progress Summary */}
-        <div className="pt-6 mt-6 border-t border-slate-200 px-3">
-          <p className="text-xs font-medium text-slate-500 mb-3">Session Progress</p>
-          <dl className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500">Resumes built</dt>
-              <dd className="font-mono tabular-nums font-medium text-slate-900">
-                {stats.resumesBuilt}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500">ATS checks</dt>
-              <dd className="font-mono tabular-nums font-medium text-slate-900">
-                {stats.atsChecksRun}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500">Topics studied</dt>
-              <dd className="font-mono tabular-nums font-medium text-slate-900">
-                {stats.topicsStudied.length}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500">Mock interviews</dt>
-              <dd className="font-mono tabular-nums font-medium text-slate-900">
-                {stats.mockSessionsCompleted}
-              </dd>
-            </div>
-          </dl>
-        </div>
       </nav>
 
-      {/* Account Footer */}
+      {/* Profile Button Footer */}
       <div className="p-3 border-t border-slate-200 shrink-0">
-        {user ? (
-          <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+        <div
+          className={`flex items-center justify-between gap-2 rounded-xl p-1.5 transition-colors ${
+            activeView === 'profile' ? 'bg-indigo-50' : 'hover:bg-slate-50'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => handleSelect('profile')}
+            aria-current={activeView === 'profile' ? 'page' : undefined}
+            className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+          >
+            {profilePhotoUrl ? (
+              <img
+                src={profilePhotoUrl}
+                alt={displayName || user.name}
+                className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-semibold shrink-0">
+                {(displayName || user.name)
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0]?.toUpperCase() ?? '')
+                  .join('') || 'U'}
+              </div>
+            )}
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {displayName || user.name}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">
+                Profile &amp; Session Progress
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={onLogout}
-              aria-label="Log out"
-              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
-            >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onCloseMobile();
-                onOpenAuth('login');
-              }}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap"
-            >
-              <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-              Log In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onCloseMobile();
-                onOpenAuth('register');
-              }}
-              className="flex-1 px-3 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap"
-            >
-              Register
-            </button>
-          </div>
-        )}
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Log out"
+            title="Log out"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 transition-colors shrink-0"
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,18 +1,36 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Moon, Sun } from 'lucide-react';
 import { AtsCheckerPage } from './components/AtsCheckerPage';
-import { AuthModal } from './components/AuthModal';
 import { FakeJobDetectionPage } from './components/FakeJobDetectionPage';
 import { InterviewQaPage } from './components/InterviewQaPage';
+import { LoginPage } from './components/LoginPage';
 import { MockInterviewPage } from './components/MockInterviewPage';
 import { OverviewPage } from './components/OverviewPage';
+import { ProfilePage } from './components/ProfilePage';
 import { ResumeBuilderPage } from './components/ResumeBuilderPage';
 import { Sidebar } from './components/Sidebar';
 import { StudyConceptsPage } from './components/StudyConceptsPage';
 import { apiRequest } from './lib/api';
-import type { AuthUser, WorkspaceStats, WorkspaceView } from './types';
+import type {
+  AuthUser,
+  StudyConceptRedirectPayload,
+  UserProfileDetails,
+  WorkspaceStats,
+  WorkspaceView,
+} from './types';
 
 const STATS_STORAGE_KEY = 'ai_interview_prep_suite_stats_v1';
+const THEME_STORAGE_KEY = 'workwise_theme_v1';
+
+function loadSavedTheme(): 'light' | 'dark' {
+  try {
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'dark' || saved === 'light') return saved;
+  } catch {
+    // Ignore storage errors
+  }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 const DEFAULT_STATS: WorkspaceStats = {
   resumesBuilt: 0,
@@ -32,7 +50,33 @@ const VIEW_TITLES: Record<WorkspaceView, string> = {
   'study-concepts': 'Study Concepts',
   'mock-interview': 'Mock Interview',
   'fake-job-detection': 'Fake Job Detection',
+  profile: 'Profile',
 };
+
+const PROFILE_STORAGE_PREFIX = 'workwise_user_profile_v1_';
+
+function loadUserProfile(user: AuthUser): UserProfileDetails {
+  const fallback: UserProfileDetails = {
+    name: user.name,
+    headline: '',
+    targetRole: '',
+    location: '',
+    bio: '',
+    photoDataUrl: '',
+  };
+  try {
+    const raw = window.localStorage.getItem(`${PROFILE_STORAGE_PREFIX}${user.email.toLowerCase()}`);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<UserProfileDetails>;
+    return {
+      ...fallback,
+      ...parsed,
+      name: parsed.name?.trim() || user.name,
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 function loadSavedStats(): WorkspaceStats {
   try {
@@ -59,13 +103,16 @@ export default function App() {
   });
 
   const [stats, setStats] = useState<WorkspaceStats>(loadSavedStats);
+  const [theme, setTheme] = useState<'light' | 'dark'>(loadSavedTheme);
   const [sharedResumeText, setSharedResumeText] = useState('');
+  const [pendingStudyConcept, setPendingStudyConcept] =
+    useState<StudyConceptRedirectPayload | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Auth state kept strictly in React memory (never localStorage)
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfileDetails | null>(null);
 
   useEffect(() => {
     try {
@@ -74,6 +121,19 @@ export default function App() {
       // Ignore storage quota errors
     }
   }, [stats]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const handleLogout = async () => {
     try {
@@ -137,14 +197,49 @@ export default function App() {
     }));
   };
 
+  if (!user) {
+    return (
+      <LoginPage
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onSuccess={(authedUser, token) => {
+          setUser(authedUser);
+          setAuthToken(token);
+          setUserProfile(loadUserProfile(authedUser));
+        }}
+      />
+    );
+  }
+
+  const activeProfile: UserProfileDetails = userProfile ?? {
+    name: user.name,
+    headline: '',
+    targetRole: '',
+    location: '',
+    bio: '',
+    photoDataUrl: '',
+  };
+
+  const handleSaveProfile = (next: UserProfileDetails) => {
+    setUserProfile(next);
+    try {
+      window.localStorage.setItem(
+        `${PROFILE_STORAGE_PREFIX}${user.email.toLowerCase()}`,
+        JSON.stringify(next)
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900">
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
-        stats={stats}
         user={user}
-        onOpenAuth={(mode) => setAuthModalMode(mode)}
+        profilePhotoUrl={activeProfile.photoDataUrl}
+        displayName={activeProfile.name}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
@@ -179,14 +274,33 @@ export default function App() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {activeView !== 'overview' && activeView !== 'mock-interview' && (
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                  <span className="hidden sm:inline">Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-3.5 w-3.5 text-slate-600" aria-hidden="true" />
+                  <span className="hidden sm:inline">Dark</span>
+                </>
+              )}
+            </button>
+            {activeView !== 'interview-qa' && (
               <button
                 type="button"
-                onClick={() => setActiveView('mock-interview')}
+                onClick={() => setActiveView('interview-qa')}
                 className="px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
               >
-                <span className="hidden sm:inline">Start </span>Mock Interview
+                Interview Q&amp;A
               </button>
             )}
           </div>
@@ -211,33 +325,38 @@ export default function App() {
               />
             )}
             {activeView === 'interview-qa' && (
-              <InterviewQaPage onQuestionPracticed={handleQuestionPracticed} />
+              <InterviewQaPage
+                onQuestionPracticed={handleQuestionPracticed}
+                onKnowMore={(payload) => {
+                  setPendingStudyConcept(payload);
+                  setActiveView('study-concepts');
+                }}
+              />
             )}
             {activeView === 'study-concepts' && (
               <StudyConceptsPage
                 studiedTopics={stats.topicsStudied}
                 onToggleTopicStudied={handleToggleTopicStudied}
+                initialConcept={pendingStudyConcept}
+                onClearInitialConcept={() => setPendingStudyConcept(null)}
               />
             )}
             {activeView === 'mock-interview' && (
               <MockInterviewPage onSessionCompleted={handleMockCompleted} />
             )}
             {activeView === 'fake-job-detection' && <FakeJobDetectionPage />}
+            {activeView === 'profile' && (
+              <ProfilePage
+                user={user}
+                profile={activeProfile}
+                onSaveProfile={handleSaveProfile}
+                stats={stats}
+                onNavigate={setActiveView}
+              />
+            )}
           </div>
         </main>
       </div>
-
-      {authModalMode && (
-        <AuthModal
-          mode={authModalMode}
-          onClose={() => setAuthModalMode(null)}
-          onSwitchMode={(next) => setAuthModalMode(next)}
-          onSuccess={(authedUser, token) => {
-            setUser(authedUser);
-            setAuthToken(token);
-          }}
-        />
-      )}
     </div>
   );
 }

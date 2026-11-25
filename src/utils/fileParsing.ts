@@ -9,6 +9,12 @@ export const ACCEPTED_RESUME_EXTENSIONS = [
   '.rtf',
   '.html',
   '.htm',
+  '.json',
+  '.csv',
+  '.tex',
+  '.xml',
+  '.yaml',
+  '.yml',
 ] as const;
 
 export const MAX_RESUME_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -21,6 +27,21 @@ export function getSupportedExtension(fileName: string): string {
 
 export function isSupportedResumeExtension(ext: string): boolean {
   return (ACCEPTED_RESUME_EXTENSIONS as readonly string[]).includes(ext);
+}
+
+export function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read uploaded file.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read uploaded file.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function buildSafeResumeFilename(

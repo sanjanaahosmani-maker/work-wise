@@ -5,7 +5,8 @@ export type WorkspaceView =
   | 'interview-qa'
   | 'study-concepts'
   | 'mock-interview'
-  | 'fake-job-detection';
+  | 'fake-job-detection'
+  | 'profile';
 
 export type ExperienceLevel = 'junior' | 'mid' | 'senior';
 export type StudyLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -15,6 +16,15 @@ export interface AuthUser {
   name: string;
   email: string;
   createdAt: string;
+}
+
+export interface UserProfileDetails {
+  name: string;
+  headline: string;
+  targetRole: string;
+  location: string;
+  bio: string;
+  photoDataUrl: string;
 }
 
 export interface ResumeFormData {
@@ -131,4 +141,12 @@ export interface WorkspaceStats {
   mockSessionsCompleted: number;
   lastAtsScore: number | null;
   lastMockScore: number | null;
+}
+
+export interface StudyConceptRedirectPayload {
+  role: string;
+  question: string;
+  userAnswer: string;
+  idealAnswer: string;
+  keyPoints?: string[];
 }

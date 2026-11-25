@@ -1,4 +1,3 @@
-import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import type {
   AnswerFeedback,
   AtsDeepReview,
@@ -29,79 +28,123 @@ import {
   type VoiceSessionReport,
 } from '../src/utils/voiceMetrics';
 
-// Primary fast model + lightweight fallback model for high-demand 503 spikes
-const PRIMARY_MODEL = 'gemini-4-hydrogen';
-const BACKUP_MODEL = 'gemini-3.1-flash-lite';
-const ATTEMPT_TIMEOUT_MS = 8500;
+const Type = {
+  OBJECT: 'object',
+  ARRAY: 'array',
+  STRING: 'string',
+  INTEGER: 'integer',
+  BOOLEAN: 'boolean',
+} as const;
 
-function getAiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const PRIMARY_MODEL = process.env.GROQ_MODEL?.trim() || 'openai/gpt-oss-120b';
+const BACKUP_MODEL = 'openai/gpt-oss-20b';
+const ATTEMPT_TIMEOUT_MS = 30000;
+
+function getGroqApiKey(): string {
+  const apiKey = (process.env.GROQ_API_KEY ?? process.env.GEMINI_API_KEY)?.trim();
   if (!apiKey) {
     throw new Error(
-      'GEMINI_API_KEY is not configured. Please check your key in the Settings > Secrets panel.'
+      'GROQ_API_KEY is not configured. Please set GROQ_API_KEY in your .env file.'
     );
   }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
+  return apiKey;
 }
 
 function isTransientDemandError(err: unknown): boolean {
   const raw = err instanceof Error ? err.message : String(err ?? '');
-  return /503|429|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|try again later|fetch failed|ETIMEDOUT|ATTEMPT_TIMEOUT/i.test(
+  return /503|429|UNAVAILABLE|RESOURCE_EXHAUSTED|rate_limit|high demand|overloaded|try again later|fetch failed|ETIMEDOUT|ATTEMPT_TIMEOUT/i.test(
     raw
   );
 }
 
-function withAttemptTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('ATTEMPT_TIMEOUT: upstream model timed out under high demand.'));
-    }, ms);
-    promise.then(
-      (val) => {
-        clearTimeout(timer);
-        resolve(val);
-      },
-      (err) => {
-        clearTimeout(timer);
-        reject(err);
-      }
+interface GenerateParams {
+  model: string;
+  contents: string;
+  config?: {
+    systemInstruction?: string;
+    responseMimeType?: string;
+    responseSchema?: unknown;
+  };
+}
+
+async function callGroqChatCompletion(
+  apiKey: string,
+  params: GenerateParams
+): Promise<{ text: string }> {
+  const isJson = params.config?.responseMimeType === 'application/json';
+  const systemParts: string[] = [];
+  if (params.config?.systemInstruction) {
+    systemParts.push(params.config.systemInstruction);
+  }
+  if (isJson) {
+    systemParts.push(
+      params.config?.responseSchema
+        ? `You must respond with valid JSON only (no markdown fences or commentary) matching this JSON schema:\n${JSON.stringify(params.config.responseSchema)}`
+        : 'You must respond with valid JSON only (no markdown fences or commentary).'
     );
-  });
+  }
+
+  const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+  if (systemParts.length > 0) {
+    messages.push({ role: 'system', content: systemParts.join('\n\n') });
+  }
+  messages.push({ role: 'user', content: params.contents });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: params.model,
+        messages,
+        temperature: 0.4,
+        ...(isJson ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '');
+      throw new Error(`Groq API error (${res.status}): ${errorText || res.statusText}`);
+    }
+
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const text = data.choices?.[0]?.message?.content ?? '';
+    return { text };
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('ATTEMPT_TIMEOUT: upstream model timed out under high demand.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
- * Executes a Gemini generateContent call with low-latency thinking config,
- * a strict per-attempt timeout, and automatic failover (`gemini-4-hydrogen` -> `gemini-3.1-flash-lite`)
+ * Executes a Groq chat completion call with a per-attempt timeout
+ * and automatic failover (`openai/gpt-oss-120b` -> `openai/gpt-oss-20b`)
  * when a model experiences temporary 503 / 429 demand spikes.
  */
 async function generateWithRetry(
-  buildParams: (model: string) => Parameters<GoogleGenAI['models']['generateContent']>[0]
-) {
-  const ai = getAiClient();
-  const models = [PRIMARY_MODEL, BACKUP_MODEL];
+  buildParams: (model: string) => GenerateParams
+): Promise<{ text: string }> {
+  const apiKey = getGroqApiKey();
+  const models = PRIMARY_MODEL === BACKUP_MODEL ? [PRIMARY_MODEL] : [PRIMARY_MODEL, BACKUP_MODEL];
 
   let lastError: unknown;
   for (const model of models) {
     try {
-      const baseParams = buildParams(model);
-      const mergedParams = {
-        ...baseParams,
-        config: {
-          ...baseParams.config,
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        },
-      };
-      return await withAttemptTimeout(
-        ai.models.generateContent(mergedParams),
-        ATTEMPT_TIMEOUT_MS
-      );
+      return await callGroqChatCompletion(apiKey, buildParams(model));
     } catch (err) {
       lastError = err;
       if (!isTransientDemandError(err)) {
@@ -176,6 +219,149 @@ Rules:
   } catch (err) {
     if (isTransientDemandError(err)) {
       return buildStructuredResumeFallback(profile);
+    }
+    throw err;
+  }
+}
+
+export interface CorrectedResumeResult {
+  profile: ResumeFormData;
+  resume: string;
+  corrections_summary: string[];
+}
+
+export async function correctAndStructureResumeWithAI(params: {
+  rawResumeText: string;
+  targetRole?: string;
+  additionalRequirements?: string;
+}): Promise<CorrectedResumeResult> {
+  const { rawResumeText, targetRole = '', additionalRequirements = '' } = params;
+
+  const fallbackProfile: ResumeFormData = {
+    name: 'Candidate',
+    email: '',
+    phone: '',
+    target_role: targetRole || 'Software Engineer',
+    education: '',
+    experience: rawResumeText.slice(0, 3000),
+    skills: '',
+    projects: '',
+    certifications: '',
+  };
+
+  try {
+    const response = await generateWithRetry((model) => ({
+      model,
+      contents: `You are given raw text extracted from a candidate's uploaded resume file.
+Your job is two-fold:
+1. Extract all relevant candidate details into structured profile fields.
+2. Prepare a corrected, polished, ATS-friendly Markdown resume that preserves all relevant details from the uploaded file, fixes grammar/spelling/formatting issues, strengthens weak bullet points with clear action verbs, and incorporates any target role or additional requirements requested by the user.
+
+${targetRole ? `Requested Target Role: ${targetRole}` : 'Target Role: Infer the most suitable role from the resume if not specified.'}
+${additionalRequirements ? `User's Additional Requirements / Focus:\n${additionalRequirements}\n` : ''}
+Raw Resume Text:
+${rawResumeText}
+
+Rules:
+- Never fabricate companies, degrees, dates, or metrics that are not present or reasonably implied in the uploaded resume or user's additional requirements.
+- Format "resume" in clean Markdown with these exact top-level sections:
+  # <Full Name>
+  <Email> | <Phone> (include whichever contact details exist)
+  ## Professional Summary
+  ## Work Experience
+  ## Technical Skills
+  ## Education
+  Include ## Projects and ## Certifications if relevant details exist.
+- Provide 3-5 concise bullet points in "corrections_summary" explaining what was corrected or improved.`,
+      config: {
+        systemInstruction:
+          'You are an expert technical career coach and ATS resume editor. Extract structured candidate data accurately and produce crisp, scannable single-column Markdown resumes.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            profile: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                email: { type: Type.STRING },
+                phone: { type: Type.STRING },
+                target_role: { type: Type.STRING },
+                education: { type: Type.STRING },
+                experience: { type: Type.STRING },
+                skills: { type: Type.STRING },
+                projects: { type: Type.STRING },
+                certifications: { type: Type.STRING },
+              },
+              required: [
+                'name',
+                'email',
+                'phone',
+                'target_role',
+                'education',
+                'experience',
+                'skills',
+                'projects',
+                'certifications',
+              ],
+            },
+            resume: {
+              type: Type.STRING,
+              description: 'Complete corrected ATS-friendly resume in clean Markdown.',
+            },
+            corrections_summary: {
+              type: Type.ARRAY,
+              minItems: 2,
+              items: { type: Type.STRING },
+              description: '3-5 concise notes on what was fixed or improved.',
+            },
+          },
+          required: ['profile', 'resume', 'corrections_summary'],
+        },
+      },
+    }));
+
+    const parsed = parseJsonSafe<Partial<CorrectedResumeResult>>(
+      response.text,
+      'resume correction'
+    );
+
+    const p = parsed.profile ?? ({} as Partial<ResumeFormData>);
+    const normalizedProfile: ResumeFormData = {
+      name: (p.name ?? '').trim() || fallbackProfile.name,
+      email: (p.email ?? '').trim(),
+      phone: (p.phone ?? '').trim(),
+      target_role: targetRole.trim() || (p.target_role ?? '').trim() || fallbackProfile.target_role,
+      education: (p.education ?? '').trim(),
+      experience: (p.experience ?? '').trim(),
+      skills: (p.skills ?? '').trim(),
+      projects: (p.projects ?? '').trim(),
+      certifications: (p.certifications ?? '').trim(),
+    };
+
+    const cleanedResume = (parsed.resume ?? '')
+      .trim()
+      .replace(/^```(?:markdown)?\n?/i, '')
+      .replace(/\n?```$/, '')
+      .trim();
+
+    return {
+      profile: normalizedProfile,
+      resume: cleanedResume || buildStructuredResumeFallback(normalizedProfile),
+      corrections_summary:
+        Array.isArray(parsed.corrections_summary) && parsed.corrections_summary.length > 0
+          ? parsed.corrections_summary.map((s) => String(s).trim()).filter(Boolean)
+          : ['Restructured sections into an ATS-friendly single-column format.'],
+    };
+  } catch (err) {
+    if (isTransientDemandError(err)) {
+      return {
+        profile: fallbackProfile,
+        resume: buildStructuredResumeFallback(fallbackProfile),
+        corrections_summary: [
+          'Structured extracted resume content into standard ATS-friendly Markdown sections.',
+        ],
+      };
     }
     throw err;
   }
@@ -463,13 +649,24 @@ export async function generateStudyPathWithAI(
 
 export async function generateTopicDetailsWithAI(
   topic: string,
-  role: string
+  role: string,
+  qaContext?: {
+    question: string;
+    userAnswer?: string;
+    idealAnswer?: string;
+  }
 ): Promise<TopicDetails> {
   const fallback = buildFallbackTopicDetails(topic, role);
+  const contextPrompt = qaContext
+    ? `\n\nThe candidate just answered this interview question and clicked "Know More" to study the underlying concepts:\nQuestion: ${qaContext.question}${
+        qaContext.userAnswer ? `\nCandidate's Answer: ${qaContext.userAnswer}` : ''
+      }${qaContext.idealAnswer ? `\nReference Ideal Answer: ${qaContext.idealAnswer}` : ''}\n\nTailor the study guide so it directly explains the core concepts behind this question and answer, clarifies why the ideal approach works, and addresses any gaps.`
+    : '';
+
   try {
     const response = await generateWithRetry((model) => ({
       model,
-      contents: `Create a focused interview study guide for the topic "${topic}" tailored to a "${role}" candidate. Include an overview, 4 key concepts, 3 practical interview problems, 3 common mistakes candidates make, and 3 well-known documentation/learning resources with valid https URLs.`,
+      contents: `Create a focused interview study guide for the topic "${topic}" tailored to a "${role}" candidate. Include an overview, 4 key concepts, 3 practical interview problems, 3 common mistakes candidates make, and 3 well-known documentation/learning resources with valid https URLs.${contextPrompt}`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {

@@ -11,6 +11,7 @@ import {
   verifySessionToken,
 } from './server/authStore';
 import {
+  correctAndStructureResumeWithAI,
   deepReviewAtsWithAI,
   evaluateAnswerWithAI,
   generateInterviewQuestionsWithAI,
@@ -111,16 +112,16 @@ function formatCleanErrorMessage(raw: string, fallbackMessage: string): string {
 function handleApiError(res: Response, err: unknown, fallbackMessage: string) {
   const rawMessage = err instanceof Error ? err.message : fallbackMessage;
   const message = formatCleanErrorMessage(rawMessage, fallbackMessage);
-  const status = message.includes('GEMINI_API_KEY') ? 503 : 500;
+  const status =
+    message.includes('GROQ_API_KEY') || message.includes('GEMINI_API_KEY') ? 503 : 500;
   res.status(status).json({ success: false, error: message });
 }
 
-async function startServer() {
+export function createApiApp() {
   const app = express();
-  const port = Number(process.env.PORT) || 3000;
 
   app.use((req, res, next) => {
-    if (req.path === '/api/ats/extract-file') {
+    if (req.path === '/api/ats/extract-file' || req.path === '/api/resume/correct-from-file') {
       express.json({ limit: '8mb' })(req, res, next);
     } else {
       express.json({ limit: '1mb' })(req, res, next);
@@ -324,6 +325,167 @@ async function startServer() {
     }
   });
 
+  app.post('/api/resume/correct-from-file', async (req: Request, res: Response) => {
+    const fileName = asString(req.body?.file_name, 260);
+    const contentBase64 =
+      typeof req.body?.content_base64 === 'string' ? req.body.content_base64 : '';
+    const targetRole = asString(req.body?.target_role, 120);
+    const additionalRequirements = asString(req.body?.additional_requirements, 2000);
+
+    if (!fileName || !contentBase64) {
+      res.status(400).json({
+        success: false,
+        error: 'Please upload a resume file first.',
+      });
+      return;
+    }
+
+    try {
+      const extracted = await extractResumeTextFromBase64(fileName, contentBase64);
+      const corrected = await correctAndStructureResumeWithAI({
+        rawResumeText: extracted.text,
+        targetRole,
+        additionalRequirements,
+      });
+
+      res.json({
+        success: true,
+        file_name: extracted.fileName,
+        file_type: extracted.fileType,
+        extracted_text: extracted.text,
+        profile: corrected.profile,
+        resume: corrected.resume,
+        corrections_summary: corrected.corrections_summary,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      if (err instanceof FileExtractionError) {
+        res.status(err.status).json({ success: false, error: err.message });
+        return;
+      }
+      handleApiError(res, err, 'Failed to process and correct uploaded resume.');
+    }
+  });
+
+  app.post('/api/resume/from-linkedin', async (req: Request, res: Response) => {
+    const linkedinUrl = asString(req.body?.linkedin_url, 500);
+    const linkedinText = asString(req.body?.linkedin_text, 25000);
+    const targetRole = asString(req.body?.target_role, 120);
+    const additionalRequirements = asString(req.body?.additional_requirements, 2000);
+
+    if (!linkedinUrl && !linkedinText) {
+      res.status(400).json({
+        success: false,
+        error: 'Please enter a LinkedIn profile URL or paste your LinkedIn profile details.',
+      });
+      return;
+    }
+
+    if (linkedinUrl) {
+      try {
+        const parsedUrl = new URL(linkedinUrl);
+        if (!/^https?:$/i.test(parsedUrl.protocol) || !parsedUrl.hostname.toLowerCase().includes('linkedin.com')) {
+          res.status(400).json({
+            success: false,
+            error: 'Please enter a valid LinkedIn URL (e.g., https://www.linkedin.com/in/username).',
+          });
+          return;
+        }
+      } catch {
+        res.status(400).json({
+          success: false,
+          error: 'Please enter a valid LinkedIn URL (e.g., https://www.linkedin.com/in/username).',
+        });
+        return;
+      }
+    }
+
+    let rawProfileText = linkedinText;
+
+    if (!rawProfileText && linkedinUrl) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(linkedinUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+          redirect: 'follow',
+          signal: controller.signal,
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+          const isAuthWall =
+            /authwall|uas\/login|Sign In\s*\|\s*LinkedIn|Join LinkedIn/i.test(html) &&
+            !/experience|education|skills/i.test(html);
+
+          if (!isAuthWall) {
+            const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+            const descMatch = html.match(
+              /<meta[^>]+(?:name=["']description["']|property=["']og:description["'])[^>]+content=["']([^"']+)["']/i
+            );
+            const ldJsonMatches = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+              .map((m) => m[1]?.trim())
+              .filter(Boolean)
+              .join('\n');
+
+            const combined = [
+              titleMatch?.[1]?.trim(),
+              descMatch?.[1]?.trim(),
+              ldJsonMatches,
+            ]
+              .filter(Boolean)
+              .join('\n\n')
+              .trim();
+
+            if (combined.length >= 60) {
+              rawProfileText = combined;
+            }
+          }
+        }
+      } catch {
+        // Fall through to helpful guidance below
+      } finally {
+        clearTimeout(timer);
+      }
+
+      if (!rawProfileText) {
+        res.status(422).json({
+          success: false,
+          error:
+            'LinkedIn blocked automated access to this profile URL. Please paste your LinkedIn profile text below, or export your profile on LinkedIn (More → Save to PDF) and upload it in the Upload File tab.',
+        });
+        return;
+      }
+    }
+
+    try {
+      const combinedSource = linkedinUrl
+        ? `LinkedIn Profile URL: ${linkedinUrl}\n\n${rawProfileText}`
+        : rawProfileText;
+
+      const corrected = await correctAndStructureResumeWithAI({
+        rawResumeText: combinedSource,
+        targetRole,
+        additionalRequirements,
+      });
+
+      res.json({
+        success: true,
+        profile: corrected.profile,
+        resume: corrected.resume,
+        corrections_summary: corrected.corrections_summary,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      handleApiError(res, err, 'Failed to create resume from LinkedIn profile.');
+    }
+  });
+
   // ========================
   // INTERVIEW Q&A ROUTES
   // ========================
@@ -407,6 +569,37 @@ async function startServer() {
       res.json({ success: true, topic_details: topicDetails });
     } catch (err) {
       handleApiError(res, err, 'Failed to load topic details.');
+    }
+  });
+
+  app.post('/api/study/topic-from-qa', async (req: Request, res: Response) => {
+    const role = asString(req.body?.role, 120) || 'Software Engineer';
+    const question = asString(req.body?.question, 2000);
+    const userAnswer = asString(req.body?.user_answer, 6000);
+    const idealAnswer = asString(req.body?.ideal_answer, 6000);
+    const keyPoints = Array.isArray(req.body?.key_points)
+      ? req.body.key_points.map((p: unknown) => asString(p, 120)).filter(Boolean)
+      : [];
+
+    if (!question) {
+      res.status(400).json({ success: false, error: 'Question is required.' });
+      return;
+    }
+
+    const topicTitle =
+      keyPoints.length > 0
+        ? keyPoints.slice(0, 2).join(' & ')
+        : question.replace(/\?+$/, '').slice(0, 80);
+
+    try {
+      const topicDetails = await generateTopicDetailsWithAI(topicTitle, role, {
+        question,
+        userAnswer,
+        idealAnswer,
+      });
+      res.json({ success: true, topic_details: topicDetails });
+    } catch (err) {
+      handleApiError(res, err, 'Failed to load study concept details for this question.');
     }
   });
 
@@ -792,6 +985,13 @@ async function startServer() {
     res.status(404).json({ success: false, error: 'Endpoint not found.' });
   });
 
+  return app;
+}
+
+async function startServer() {
+  const app = createApiApp();
+  const port = Number(process.env.PORT) || 3000;
+
   // Frontend serving (Vite dev middleware in development, static dist/ in production)
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
@@ -813,7 +1013,9 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}

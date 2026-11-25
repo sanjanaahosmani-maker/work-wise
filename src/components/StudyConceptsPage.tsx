@@ -1,13 +1,21 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { BookOpen, CheckCircle2, Circle, ExternalLink, Loader2, X } from 'lucide-react';
 import { AVAILABLE_ROLES, CURATED_STUDY_PATHS } from '../data/catalog';
 import { apiRequest } from '../lib/api';
-import type { StudyLevel, StudyPathMap, StudyTopic, TopicDetails } from '../types';
+import type {
+  StudyConceptRedirectPayload,
+  StudyLevel,
+  StudyPathMap,
+  StudyTopic,
+  TopicDetails,
+} from '../types';
 import { buildFallbackStudyPath } from '../utils/fallbackGenerators';
 
 interface StudyConceptsPageProps {
   studiedTopics: string[];
   onToggleTopicStudied: (topicKey: string) => void;
+  initialConcept?: StudyConceptRedirectPayload | null;
+  onClearInitialConcept?: () => void;
 }
 
 const LEVELS: { id: StudyLevel; label: string }[] = [
@@ -19,6 +27,8 @@ const LEVELS: { id: StudyLevel; label: string }[] = [
 export function StudyConceptsPage({
   studiedTopics,
   onToggleTopicStudied,
+  initialConcept,
+  onClearInitialConcept,
 }: StudyConceptsPageProps) {
   const [role, setRole] = useState('Frontend Developer');
   const [level, setLevel] = useState<StudyLevel>('intermediate');
@@ -34,6 +44,57 @@ export function StudyConceptsPage({
   const [topicDetails, setTopicDetails] = useState<TopicDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
+  const [qaQuestionContext, setQaQuestionContext] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!initialConcept) return;
+
+    const targetRole = initialConcept.role || 'Software Engineer';
+    if (AVAILABLE_ROLES.includes(targetRole)) {
+      setRole(targetRole);
+      setStudyPath(buildFallbackStudyPath(targetRole, level));
+    }
+
+    const topicTitle =
+      initialConcept.keyPoints && initialConcept.keyPoints.length > 0
+        ? initialConcept.keyPoints.slice(0, 2).join(' & ')
+        : initialConcept.question.replace(/\?+$/, '').slice(0, 80);
+
+    setSelectedTopic({
+      topic: topicTitle,
+      description: initialConcept.question,
+      importance: 'Core interview concept from your Q&A session',
+      key_points: initialConcept.keyPoints ?? [],
+      resources: [],
+    });
+    setQaQuestionContext(initialConcept.question);
+    setTopicDetails(null);
+    setDetailsError('');
+    setLoadingDetails(true);
+    onClearInitialConcept?.();
+
+    apiRequest<{ success: boolean; topic_details: TopicDetails }>('/study/topic-from-qa', {
+      method: 'POST',
+      body: JSON.stringify({
+        role: targetRole,
+        question: initialConcept.question,
+        user_answer: initialConcept.userAnswer,
+        ideal_answer: initialConcept.idealAnswer,
+        key_points: initialConcept.keyPoints ?? [],
+      }),
+    })
+      .then((res) => {
+        setTopicDetails(res.topic_details);
+      })
+      .catch((err) => {
+        setDetailsError(
+          err instanceof Error ? err.message : 'Could not fetch AI deep-dive details.'
+        );
+      })
+      .finally(() => {
+        setLoadingDetails(false);
+      });
+  }, [initialConcept]);
 
   const handleLoadCurated = (nextRole: string) => {
     setStudyPath(buildFallbackStudyPath(nextRole, level));
@@ -69,6 +130,7 @@ export function StudyConceptsPage({
 
   const openTopicDeepDive = async (topic: StudyTopic) => {
     setSelectedTopic(topic);
+    setQaQuestionContext(null);
     setTopicDetails(null);
     setDetailsError('');
     setLoadingDetails(true);
@@ -324,6 +386,15 @@ export function StudyConceptsPage({
             </div>
 
             <div className="p-6 space-y-5 overflow-y-auto">
+              {qaQuestionContext && (
+                <div className="bg-indigo-50/70 border border-indigo-200 rounded-lg p-3.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 mb-1">
+                    From Interview Q&amp;A
+                  </p>
+                  <p className="text-xs font-medium text-slate-800">{qaQuestionContext}</p>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-xs font-semibold text-slate-500 mb-1">Overview</h3>
                 <p className="text-sm text-slate-700 leading-relaxed">
