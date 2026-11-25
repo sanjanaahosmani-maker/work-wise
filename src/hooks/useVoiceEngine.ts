@@ -435,8 +435,11 @@ export function useVoiceEngine(options: UseVoiceEngineOptions = {}) {
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         const voices = window.speechSynthesis.getVoices();
+        const femaleVoicePattern =
+          /samantha|zira|aria|jenny|ava|emma|sonia|libby|natasha|susan|hazel|victoria|karen|moira|tessa|fiona|female|google us english|google uk english female/i;
         const preferred =
-          voices.find((v) => v.lang.startsWith('en') && /natural|google|samantha/i.test(v.name)) ??
+          voices.find((v) => v.lang.startsWith('en') && femaleVoicePattern.test(v.name)) ??
+          voices.find((v) => femaleVoicePattern.test(v.name)) ??
           voices.find((v) => v.lang.startsWith('en'));
         if (preferred) {
           utterance.voice = preferred;

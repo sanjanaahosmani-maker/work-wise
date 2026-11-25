@@ -458,7 +458,7 @@ export function VoiceAssistantMode({ onSessionCompleted }: VoiceAssistantModePro
                   htmlFor="voice-count"
                   className="block text-xs font-medium text-slate-700 mb-1"
                 >
-                  Questions (5–10)
+                  Questions
                 </label>
                 <input
                   id="voice-count"

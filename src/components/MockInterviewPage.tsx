@@ -346,7 +346,7 @@ export function MockInterviewPage({ onSessionCompleted }: MockInterviewPageProps
                   htmlFor="mock-count"
                   className="block text-xs font-medium text-slate-700 mb-1"
                 >
-                  Number of Questions (1-10)
+                  Questions
                 </label>
                 <input
                   id="mock-count"
